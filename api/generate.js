@@ -27,12 +27,13 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        max_tokens: 1500,
+        max_tokens: 4000,
         temperature: 0.7,
+        response_format: { type: 'json_object' },
         messages: [
           {
             role: 'system',
-            content: 'You are an expert fitness coach and nutritionist. Always respond with valid JSON only — no markdown, no backticks, no extra text.'
+            content: 'You are an expert fitness coach. Always respond with valid JSON only. No markdown, no backticks, no explanation text — just the raw JSON object.'
           },
           { role: 'user', content: textContent }
         ]
