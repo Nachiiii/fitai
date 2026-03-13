@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FitAI — Your AI Fitness Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --bg2: #161616;
+    --bg3: #1f1f1f;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0ede8;
+    --text2: #9a9590;
+    --text3: #5a5650;
+    --accent: #c8f542;
+    --accent-dim: rgba(200,245,66,0.12);
+    --accent-text: #0d0d0d;
+    --red: #ff5c5c;
+    --red-dim: rgba(255,92,92,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --radius-pill: 999px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 1rem 5rem;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 2rem 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo em { color: var(--accent); font-style: normal; }
+  .header-sub {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 0.85rem;
+  }
+
+  /* ── GOAL BUTTONS ── */
+  .goal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .goal-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .goal-btn:hover { border-color: var(--border2); color: var(--text); }
+  .goal-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .goal-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+
+  /* ── FORM FIELDS ── */
+  .field { margin-bottom: 0.85rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field input::placeholder { color: var(--text3); }
+  .field select option { background: var(--bg3); }
+
+  /* ── UPLOAD ── */
+  .upload-zone {
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 1.75rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--bg3);
+  }
+  .upload-zone:hover { border-color: var(--accent); background: var(--accent-dim); }
+  .upload-zone input {
+    position: absolute; inset: 0; opacity: 0;
+    cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-main { font-size: 13px; font-weight: 500; color: var(--text2); }
+  .upload-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .preview-img {
+    width: 80px; height: 80px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 1px solid var(--border2);
+    margin: 0 auto 8px;
+    display: block;
+  }
+
+  /* ── CTA BUTTON ── */
+  .cta-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-top: 0.5rem;
+    letter-spacing: -0.2px;
+  }
+  .cta-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .cta-btn:hover:not(:disabled) { opacity: 0.88; }
+  .cta-btn:active:not(:disabled) { transform: scale(0.98); }
+
+  /* ── RESULTS HEADER ── */
+  .result-header {
+    padding: 1.5rem 0 1rem;
+  }
+  .result-goal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(200,245,66,0.25);
+    border-radius: var(--radius-pill);
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .result-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 1rem;
+  }
+  .metric-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    text-align: center;
+  }
+  .metric-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
+  .metric-value { font-size: 17px; font-weight: 600; color: var(--text); }
+
+  /* ── TABS ── */
+  .tabs-nav {
+    display: flex;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    gap: 3px;
+    margin-bottom: 0.75rem;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 9px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .tab-btn.active {
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+
+  /* ── WORKOUT TYPE TOGGLE ── */
+  .workout-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 1rem;
+  }
+  .wt-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .wt-btn.active {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  .wt-icon { font-size: 14px; }
+
+  /* ── PLAN CONTENT ── */
+  .plan-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.75;
+    white-space: pre-wrap;
+  }
+  .plan-day {
+    margin-bottom: 1.25rem;
+  }
+  .plan-day-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .plan-day-content {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+
+  /* ── LOADING ── */
+  .loading-wrap { text-align: center; padding: 2rem 0; }
+  .loading-spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-size: 13px; color: var(--text3); }
+  .loading-dots::after {
+    content: '';
+    animation: dots 1.5s steps(3, end) infinite;
+  }
+  @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+  /* ── BACK / RESET ── */
+  .ghost-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--text3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+  }
+  .ghost-btn:hover { border-color: var(--border2); color: var(--text2); }
+
+  /* ── ERROR ── */
+  .error-box {
+    background: var(--red-dim);
+    border: 1px solid rgba(255,92,92,0.3);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--red);
+    margin-top: 0.5rem;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1rem 0;
+  }
+
+  /* ── SCREEN TRANSITIONS ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── FOOTER NOTE ── */
+  .footer-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    padding: 1rem 0 0;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f3ef;
+      --bg2: #ffffff;
+      --bg3: #f0ede8;
+      --border: rgba(0,0,0,0.08);
+      --border2: rgba(0,0,0,0.15);
+      --text: #1a1a18;
+      --text2: #5a5650;
+      --text3: #9a9590;
+      --accent: #3d8c00;
+      --accent-dim: rgba(61,140,0,0.08);
+      --accent-text: #ffffff;
+      --red: #cc2b2b;
+      --red-dim: rgba(204,43,43,0.08);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="logo">Fit<em>AI</em></div>
+    </div>
+    <div class="header-sub">AI Fitness Coach</div>
+  </div>
+
+  <!-- ══ SETUP SCREEN ══ -->
+  <div class="screen active" id="screen-setup">
+
+    <div class="card">
+      <div class="card-label">Your goal</div>
+      <div class="goal-grid">
+        <button class="goal-btn" id="btn-bulk" onclick="setGoal('bulk')">
+          <span class="goal-icon">💪</span>Bulk up
+        </button>
+        <button class="goal-btn" id="btn-cut" onclick="setGoal('cut')">
+          <span class="goal-icon">🔥</span>Cut fat
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Your stats</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Current weight (kg)</label>
+          <input type="number" id="current-weight" placeholder="e.g. 75" min="30" max="300" oninput="checkReady()" />
+        </div>
+        <div class="field">
+          <label>Target weight (kg)</label>
+          <input type="number" id="target-weight" placeholder="e.g. 85" min="30" max="300" oninput="checkReady()" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Age</label>
+          <input type="number" id="age" placeholder="e.g. 25" min="10" max="99" oninput="checkReady()" />
+        </div>
+        <div class="field">
+          <label>Gender</label>
+          <select id="gender" onchange="checkReady()">
+            <option value="">Select</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Fitness level</label>
+        <select id="fitness-level" onchange="checkReady()">
+          <option value="">Select</option>
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Workout preference</div>
+      <div class="goal-grid">
+        <button class="goal-btn" id="btn-home" onclick="setWorkoutType('home')">
+          <span class="goal-icon">🏠</span>Home
+        </button>
+        <button class="goal-btn" id="btn-gym" onclick="setWorkoutType('gym')">
+          <span class="goal-icon">🏋️</span>Gym
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Body photo <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional — helps AI)</span></div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" accept="image/*" id="photo-input" onchange="handlePhoto(event)" />
+        <div id="upload-placeholder">
+          <div class="upload-icon">📸</div>
+          <div class="upload-main">Tap to upload a photo</div>
+          <div class="upload-sub">Full body, well-lit</div>
+        </div>
+        <div id="upload-preview" style="display:none">
+          <img id="preview-img" class="preview-img" />
+          <div class="upload-sub">Photo added ✓</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="cta-btn" id="gen-btn" onclick="generatePlan()" disabled>
+      Generate my plan →
+    </button>
+    <div class="footer-note">Powered by Claude AI · Free to use</div>
+
+  </div>
+
+  <!-- ══ LOADING SCREEN ══ -->
+  <div class="screen" id="screen-loading">
+    <div style="padding-top: 3rem;">
+      <div class="loading-wrap">
+        <div class="loading-spinner"></div>
+        <div class="loading-msg loading-dots" id="loading-msg">Analyzing your profile</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RESULTS SCREEN ══ -->
+  <div class="screen" id="screen-results">
+
+    <div class="result-header">
+      <div class="result-goal-badge" id="result-badge">💪 Bulk plan</div>
+      <div class="result-title" id="result-title">Your personalized<br>fitness plan is ready</div>
+      <div class="metrics-row" id="metrics-row"></div>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" id="tab-workout" onclick="showTab('workout')">Workout</button>
+      <button class="tab-btn" id="tab-diet" onclick="showTab('diet')">Diet</button>
+      <button class="tab-btn" id="tab-tips" onclick="showTab('tips')">Tips</button>
+    </div>
+
+    <!-- WORKOUT TAB -->
+    <div id="pane-workout" class="card">
+      <div class="card-label" style="margin-bottom:0.75rem">Workout type</div>
+      <div class="workout-toggle">
+        <button class="wt-btn active" id="wt-home" onclick="switchWorkoutType('home')">
+          <span class="wt-icon">🏠</span> Home
+        </button>
+        <button class="wt-btn" id="wt-gym" onclick="switchWorkoutType('gym')">
+          <span class="wt-icon">🏋️</span> Gym
+        </button>
+      </div>
+      <div class="divider" style="margin-top:0"></div>
+      <div class="card-label">Weekly plan</div>
+      <div id="workout-content">
+        <div class="loading-wrap"><div class="loading-spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- DIET TAB -->
+    <div id="pane-diet" class="card" style="display:none">
+      <div class="card-label">Daily diet plan</div>
+      <div id="diet-content">
+        <div class="loading-wrap"><div class="loading-spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- TIPS TAB -->
+    <div id="pane-tips" class="card" style="display:none">
+      <div class="card-label">Personalized tips</div>
+      <div id="tips-content">
+        <div class="loading-wrap"><div class="loading-spinner"></div></div>
+      </div>
+    </div>
+
+    <div id="error-box" class="error-box" style="display:none"></div>
+
+    <button class="ghost-btn" onclick="reset()">← Start over</button>
+    <div class="footer-note" style="padding-bottom:1rem">Powered by Claude AI</div>
+
+  </div>
+</div>
+
+<script>
+  // ── STATE ──
+  let goal = null;
+  let workoutType = null;   // 'home' or 'gym' — chosen on setup
+  let resultWorkoutType = null; // current type shown in results
+  let photoBase64 = null;
+  let plans = { home: null, gym: null, diet: null, tips: null };
+  let activeTab = 'workout';
+
+  // ── SETUP ──
+  function setGoal(g) {
+    goal = g;
+    document.getElementById('btn-bulk').classList.toggle('active', g === 'bulk');
+    document.getElementById('btn-cut').classList.toggle('active', g === 'cut');
+    checkReady();
+  }
+
+  function setWorkoutType(t) {
+    workoutType = t;
+    document.getElementById('btn-home').classList.toggle('active', t === 'home');
+    document.getElementById('btn-gym').classList.toggle('active', t === 'gym');
+    checkReady();
+  }
+
+  function checkReady() {
+    const cw = document.getElementById('current-weight').value;
+    const tw = document.getElementById('target-weight').value;
+    const age = document.getElementById('age').value;
+    const gender = document.getElementById('gender').value;
+    const level = document.getElementById('fitness-level').value;
+    const ok = goal && workoutType && cw && tw && age && gender && level;
+    document.getElementById('gen-btn').disabled = !ok;
+  }
+
+  function handlePhoto(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      photoBase64 = ev.target.result.split(',')[1];
+      document.getElementById('preview-img').src = ev.target.result;
+      document.getElementById('upload-placeholder').style.display = 'none';
+      document.getElementById('upload-preview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ── TABS ──
+  function showTab(tab) {
+    activeTab = tab;
+    ['workout','diet','tips'].forEach(t => {
+      document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+      document.getElementById('pane-' + t).style.display = t === tab ? 'block' : 'none';
+    });
+  }
+
+  // ── WORKOUT TYPE SWITCH (in results) ──
+  function switchWorkoutType(type) {
+    if (resultWorkoutType === type) return;
+    resultWorkoutType = type;
+    document.getElementById('wt-home').classList.toggle('active', type === 'home');
+    document.getElementById('wt-gym').classList.toggle('active', type === 'gym');
+
+    if (plans[type]) {
+      renderWorkout(plans[type]);
+    } else {
+      document.getElementById('workout-content').innerHTML = '<div class="loading-wrap"><div class="loading-spinner"></div><div class="loading-msg loading-dots" style="margin-top:8px">Generating ' + type + ' plan</div></div>';
+      fetchWorkoutPlan(type);
+    }
+  }
+
+  // ── RENDER ──
+  function renderText(el, text) {
+    const container = document.getElementById(el);
+    container.innerHTML = '';
+    const div = document.createElement('div');
+    div.className = 'plan-text';
+    div.textContent = text;
+    container.appendChild(div);
+  }
+
+  function renderWorkout(text) {
+    renderText('workout-content', text);
+  }
+
+  // ── API CALL ──
+  async function callClaude(prompt, hasPhoto) {
+    const userContent = [];
+    if (hasPhoto && photoBase64) {
+      userContent.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photoBase64 } });
+    }
+    userContent.push({ type: 'text', text: prompt });
+
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: userContent }]
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'API error');
+    const raw = data.content.map(b => b.text || '').join('');
+    return raw.replace(/```json|```/g, '').trim();
+  }
+
+  async function fetchWorkoutPlan(type) {
+    const cw = document.getElementById('current-weight').value;
+    const tw = document.getElementById('target-weight').value;
+    const age = document.getElementById('age').value;
+    const gender = document.getElementById('gender').value;
+    const level = document.getElementById('fitness-level').value;
+
+    const prompt = `Create a detailed 7-day ${type === 'home' ? 'HOME workout (no gym equipment, bodyweight only)' : 'GYM workout (with full gym equipment)'} plan for:
+- Goal: ${goal === 'bulk' ? 'Bulk up / build muscle' : 'Cut fat / lose weight'}
+- Current weight: ${cw}kg → Target: ${tw}kg
+- Age: ${age}, Gender: ${gender}, Level: ${level}
+${photoBase64 ? '- Photo provided: assess physique' : ''}
+
+Write a clear day-by-day plan with exercises, sets, reps, and rest. Plain text, no markdown.`;
+
+    try {
+      const text = await callClaude(prompt, true);
+      plans[type] = text;
+      if (resultWorkoutType === type) renderWorkout(text);
+    } catch(e) {
+      if (resultWorkoutType === type) {
+        document.getElementById('workout-content').innerHTML = '<div class="error-box">Failed to load ' + type + ' plan. Tap to retry.</div>';
+      }
+    }
+  }
+
+  // ── MAIN GENERATE ──
+  async function generatePlan() {
+    const cw = document.getElementById('current-weight').value;
+    const tw = document.getElementById('target-weight').value;
+    const age = document.getElementById('age').value;
+    const gender = document.getElementById('gender').value;
+    const level = document.getElementById('fitness-level').value;
+
+    // switch screens
+    showScreen('loading');
+    const loadMsgs = ['Analyzing your profile', 'Building your workout plan', 'Crafting your diet', 'Adding personal tips'];
+    let mi = 0;
+    const interval = setInterval(() => {
+      mi = (mi + 1) % loadMsgs.length;
+      document.getElementById('loading-msg').textContent = loadMsgs[mi];
+    }, 2200);
+
+    // set result UI
+    resultWorkoutType = workoutType;
+    document.getElementById('result-badge').textContent = goal === 'bulk' ? '💪 Bulk plan' : '🔥 Cut plan';
+    document.getElementById('metrics-row').innerHTML = `
+      <div class="metric-box"><div class="metric-label">Now</div><div class="metric-value">${cw}kg</div></div>
+      <div class="metric-box"><div class="metric-label">Target</div><div class="metric-value">${tw}kg</div></div>
+      <div class="metric-box"><div class="metric-label">Level</div><div class="metric-value" style="font-size:13px;text-transform:capitalize">${level}</div></div>
+    `;
+    document.getElementById('wt-home').classList.toggle('active', workoutType === 'home');
+    document.getElementById('wt-gym').classList.toggle('active', workoutType === 'gym');
+
+    // build prompt for all at once
+    const baseInfo = `Goal: ${goal === 'bulk' ? 'Bulk/muscle gain' : 'Cut fat/lose weight'} | Current: ${cw}kg → Target: ${tw}kg | Age: ${age} | Gender: ${gender} | Level: ${level}${photoBase64 ? ' | Photo provided' : ''}`;
+
+    const allPrompt = `You are an expert fitness coach. Create a complete fitness plan for this person:
+${baseInfo}
+Workout preference: ${workoutType === 'home' ? 'HOME (bodyweight, no equipment)' : 'GYM (full equipment)'}
+
+Respond ONLY with a valid JSON object, no markdown, no backticks:
+{
+  "workout": "Full 7-day ${workoutType} workout plan with exercises, sets, reps per day. Use plain text with day labels.",
+  "diet": "Complete daily diet plan with breakfast, lunch, dinner, snacks, and calorie estimates. Plain text.",
+  "tips": "5 specific tips tailored to this person's goal and stats. Plain text numbered list."
+}`;
+
+    try {
+      const raw = await callClaude(allPrompt, true);
+      clearInterval(interval);
+
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        const match = raw.match(/\{[\s\S]*\}/);
+        parsed = match ? JSON.parse(match[0]) : null;
+      }
+
+      if (!parsed) throw new Error('Parse failed');
+
+      plans[workoutType] = parsed.workout;
+      plans.diet = parsed.diet;
+      plans.tips = parsed.tips;
+
+      renderWorkout(parsed.workout);
+      renderText('diet-content', parsed.diet);
+      renderText('tips-content', parsed.tips);
+
+      showScreen('results');
+      showTab('workout');
+
+    } catch(e) {
+      clearInterval(interval);
+      showScreen('results');
+      document.getElementById('error-box').style.display = 'block';
+      document.getElementById('error-box').textContent = 'Something went wrong generating your plan. Please try again.';
+    }
+  }
+
+  // ── NAVIGATION ──
+  function showScreen(name) {
+    ['setup','loading','results'].forEach(s => {
+      document.getElementById('screen-' + s).classList.toggle('active', s === name);
+    });
+  }
+
+  function reset() {
+    goal = null; workoutType = null; resultWorkoutType = null;
+    photoBase64 = null; plans = { home: null, gym: null, diet: null, tips: null };
+    activeTab = 'workout';
+
+    ['btn-bulk','btn-cut','btn-home','btn-gym'].forEach(id => {
+      document.getElementById(id).classList.remove('active');
+    });
+    ['current-weight','target-weight','age'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('gender').value = '';
+    document.getElementById('fitness-level').value = '';
+    document.getElementById('photo-input').value = '';
+    document.getElementById('upload-placeholder').style.display = 'block';
+    document.getElementById('upload-preview').style.display = 'none';
+    document.getElementById('gen-btn').disabled = true;
+    document.getElementById('error-box').style.display = 'none';
+    document.getElementById('workout-content').innerHTML = '<div class="loading-wrap"><div class="loading-spinner"></div></div>';
+    document.getElementById('diet-content').innerHTML = '<div class="loading-wrap"><div class="loading-spinner"></div></div>';
+    document.getElementById('tips-content').innerHTML = '<div class="loading-wrap"><div class="loading-spinner"></div></div>';
+
+    showScreen('setup');
+  }
+</script>
+</body>
+</html>
