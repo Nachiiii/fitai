@@ -9,50 +9,43 @@ export default async function handler(req, res) {
   try {
     const { messages } = req.body;
 
-    const parts = [];
+    let textContent = '';
     const userMsg = messages[0];
-
     if (Array.isArray(userMsg.content)) {
       for (const block of userMsg.content) {
-        if (block.type === 'image') {
-          parts.push({
-            inlineData: {
-              mimeType: block.source.media_type,
-              data: block.source.data
-            }
-          });
-        } else if (block.type === 'text') {
-          parts.push({ text: block.text });
-        }
+        if (block.type === 'text') textContent += block.text;
       }
     } else {
-      parts.push({ text: userMsg.content });
+      textContent = userMsg.content;
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    // Updated to gemini-2.0-flash — the current free model
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-    const response = await fetch(url, {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts }],
-        generationConfig: { maxOutputTokens: 1500, temperature: 0.7 }
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 1500,
+        temperature: 0.7,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert fitness coach and nutritionist. Always respond with valid JSON only — no markdown, no backticks, no extra text.'
+          },
+          { role: 'user', content: textContent }
+        ]
       })
     });
 
     const data = await response.json();
-
     if (!response.ok) {
       return res.status(response.status).json({ error: data.error?.message || 'API error' });
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    res.status(200).json({
-      content: [{ type: 'text', text }]
-    });
+    const text = data.choices?.[0]?.message?.content || '';
+    res.status(200).json({ content: [{ type: 'text', text }] });
 
   } catch (err) {
     res.status(500).json({ error: 'Server error: ' + err.message });
