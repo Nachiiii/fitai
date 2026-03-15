@@ -403,12 +403,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div class="card">
         <img id="scan-preview" class="scan-preview"/>
-        <div class="upload-zone" id="meal-upload-zone">
-          <input type="file" accept="image/*" capture="environment" id="meal-photo" onchange="handleMealPhoto(event)"/>
-          <div id="meal-upload-ph">
-            <div style="font-size:32px;margin-bottom:8px">📷</div>
-            <div style="font-size:14px;font-weight:600;color:var(--text2)">Tap to take / upload photo</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:4px">Works best with clear meal shots</div>
+        <div id="meal-upload-ph">
+          <div style="font-size:36px;margin-bottom:10px;text-align:center">🍽️</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text2);text-align:center;margin-bottom:14px">How do you want to add your meal?</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <label style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer">
+              <input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleMealPhoto(event)"/>
+              <div style="font-size:26px">📷</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text2)">Take photo</div>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer">
+              <input type="file" accept="image/*" style="display:none" onchange="handleMealPhoto(event)"/>
+              <div style="font-size:26px">🖼️</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text2)">Upload from gallery</div>
+            </label>
           </div>
         </div>
         <div id="meal-scanning" style="display:none" class="loading-row"><div class="spinner"></div><span class="dots">Analyzing meal</span></div>
@@ -594,23 +602,24 @@ let editPref = '';
 let mealLogToday = JSON.parse(localStorage.getItem('sj_meals_'+new Date().toDateString()) || '[]');
 
 // ── INIT ──
+let appInitialized = false;
 (async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    await loadProfileAndPlan();
-  }
   updateStepsDisplay();
   initStepCounter();
   setGreeting();
 })();
 
+// Single auth listener handles refresh, login, logout — no double loading
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session) {
+  if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && !appInitialized) {
+    appInitialized = true;
     currentUser = session.user;
     await loadProfileAndPlan();
+  } else if (event === 'INITIAL_SESSION' && !session) {
+    showAuthScreen('login');
   }
   if (event === 'SIGNED_OUT') {
+    appInitialized = false;
     currentUser = null; userProfile = null;
     plans = { home:null, gym:null, diet:null, tips:null };
     showAuthScreen('login');
@@ -1095,7 +1104,6 @@ function resetMealScanner() {
   document.getElementById('meal-upload-ph').style.display = 'block';
   document.getElementById('meal-result').style.display = 'none';
   document.getElementById('meal-error').style.display = 'none';
-  document.getElementById('meal-photo').value = '';
 }
 
 // ── STEP COUNTER ──
