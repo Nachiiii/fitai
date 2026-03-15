@@ -248,12 +248,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <div id="auth-login">
     <div style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:1.5rem;line-height:1.3">Welcome back.<br>Let's get to work.</div>
-    <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="you@email.com"/></div>
-    <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••"/></div>
+    <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="you@email.com" onkeydown="if(event.key==='Enter')login()"/></div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"/>
+      <div style="text-align:right;margin-top:6px"><button class="text-btn" style="font-size:12px;color:var(--text3)" onclick="showForgotPassword()">Forgot password?</button></div>
+    </div>
     <div id="login-error" class="error-box" style="display:none;margin-bottom:0.75rem"></div>
     <button class="cta-btn" onclick="login()" id="login-btn">Sign in</button>
     <div style="text-align:center;margin-top:1.25rem;font-size:13px;color:var(--text3)">
       No account? <button class="text-btn" onclick="showSignup()">Sign up free</button>
+    </div>
+  </div>
+
+  <div id="auth-forgot" style="display:none">
+    <div style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:0.5rem">Reset password</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:1.5rem">We'll send a reset link to your email.</div>
+    <div class="field"><label>Email</label><input type="email" id="forgot-email" placeholder="you@email.com"/></div>
+    <div id="forgot-msg" style="display:none;margin-bottom:0.75rem"></div>
+    <button class="cta-btn" onclick="sendResetEmail()" id="forgot-btn">Send reset link</button>
+    <div style="text-align:center;margin-top:1.25rem;font-size:13px;color:var(--text3)">
+      <button class="text-btn" onclick="showLogin()">← Back to sign in</button>
     </div>
   </div>
 
@@ -404,20 +419,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="card">
         <img id="scan-preview" class="scan-preview"/>
         <div id="meal-upload-ph">
-          <div style="font-size:36px;margin-bottom:10px;text-align:center">🍽️</div>
-          <div style="font-size:14px;font-weight:600;color:var(--text2);text-align:center;margin-bottom:14px">How do you want to add your meal?</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <label style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer">
-              <input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleMealPhoto(event)"/>
-              <div style="font-size:26px">📷</div>
-              <div style="font-size:12px;font-weight:600;color:var(--text2)">Take photo</div>
-            </label>
-            <label style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer">
-              <input type="file" accept="image/*" style="display:none" onchange="handleMealPhoto(event)"/>
-              <div style="font-size:26px">🖼️</div>
-              <div style="font-size:12px;font-weight:600;color:var(--text2)">Upload from gallery</div>
-            </label>
-          </div>
+          <label style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:2rem 1rem;border:1px dashed rgba(255,255,255,0.15);border-radius:var(--rs);cursor:pointer;background:var(--bg3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.15)'">
+            <input type="file" accept="image/*" style="display:none" onchange="handleMealPhoto(event)"/>
+            <div style="font-size:32px">📷</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text2)">Upload meal photo</div>
+            <div style="font-size:12px;color:var(--text3)">AI will calculate calories & macros</div>
+          </label>
         </div>
         <div id="meal-scanning" style="display:none" class="loading-row"><div class="spinner"></div><span class="dots">Analyzing meal</span></div>
         <div id="meal-result" style="display:none">
@@ -602,24 +609,26 @@ let editPref = '';
 let mealLogToday = JSON.parse(localStorage.getItem('sj_meals_'+new Date().toDateString()) || '[]');
 
 // ── INIT ──
-let appInitialized = false;
+let isLoadingApp = false;
+
 (async () => {
   updateStepsDisplay();
   initStepCounter();
   setGreeting();
 })();
 
-// Single auth listener handles refresh, login, logout — no double loading
 sb.auth.onAuthStateChange(async (event, session) => {
-  if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && !appInitialized) {
-    appInitialized = true;
+  if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session) {
+    if (isLoadingApp) return; // prevent double load
+    isLoadingApp = true;
     currentUser = session.user;
     await loadProfileAndPlan();
+    // isLoadingApp reset inside loadProfileAndPlan after done
   } else if (event === 'INITIAL_SESSION' && !session) {
     showAuthScreen('login');
   }
   if (event === 'SIGNED_OUT') {
-    appInitialized = false;
+    isLoadingApp = false;
     currentUser = null; userProfile = null;
     plans = { home:null, gym:null, diet:null, tips:null };
     showAuthScreen('login');
@@ -636,10 +645,31 @@ function showAuthScreen(mode) {
 function showLogin() {
   document.getElementById('auth-login').style.display = 'block';
   document.getElementById('auth-signup').style.display = 'none';
+  document.getElementById('auth-forgot').style.display = 'none';
 }
 function showSignup() {
   document.getElementById('auth-login').style.display = 'none';
   document.getElementById('auth-signup').style.display = 'block';
+  document.getElementById('auth-forgot').style.display = 'none';
+}
+function showForgotPassword() {
+  document.getElementById('auth-login').style.display = 'none';
+  document.getElementById('auth-signup').style.display = 'none';
+  document.getElementById('auth-forgot').style.display = 'block';
+  const email = document.getElementById('login-email').value;
+  if (email) document.getElementById('forgot-email').value = email;
+}
+
+function friendlyAuthError(msg) {
+  if (!msg) return 'Something went wrong. Please try again.';
+  const m = msg.toLowerCase();
+  if (m.includes('invalid login') || m.includes('invalid credentials') || m.includes('wrong password') || m.includes('user not found')) return 'Incorrect email or password. Please try again.';
+  if (m.includes('email not confirmed')) return 'Please confirm your email before signing in.';
+  if (m.includes('too many requests') || m.includes('rate limit')) return 'Too many attempts. Please wait a few minutes and try again.';
+  if (m.includes('network') || m.includes('fetch')) return 'Network error. Check your connection and try again.';
+  if (m.includes('already registered') || m.includes('already exists')) return 'An account with this email already exists. Try signing in instead.';
+  if (m.includes('password')) return 'Password must be at least 6 characters.';
+  return msg;
 }
 
 async function login() {
@@ -648,10 +678,30 @@ async function login() {
   const btn = document.getElementById('login-btn');
   const errEl = document.getElementById('login-error');
   errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent = 'Please enter your email and password.'; errEl.style.display = 'block'; return; }
   btn.disabled = true; btn.textContent = 'Signing in...';
   const { error } = await sb.auth.signInWithPassword({ email, password: pass });
   btn.disabled = false; btn.textContent = 'Sign in';
-  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
+  if (error) { errEl.textContent = friendlyAuthError(error.message); errEl.style.display = 'block'; }
+}
+
+async function sendResetEmail() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const btn = document.getElementById('forgot-btn');
+  const msgEl = document.getElementById('forgot-msg');
+  msgEl.style.display = 'none';
+  if (!email) { msgEl.className = 'error-box'; msgEl.textContent = 'Please enter your email.'; msgEl.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Sending...';
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin
+  });
+  btn.disabled = false; btn.textContent = 'Send reset link';
+  if (error) {
+    msgEl.className = 'error-box'; msgEl.textContent = friendlyAuthError(error.message);
+  } else {
+    msgEl.className = 'success-box'; msgEl.textContent = 'Reset link sent! Check your inbox (and spam folder).';
+  }
+  msgEl.style.display = 'block';
 }
 
 async function signup() {
@@ -711,7 +761,7 @@ async function saveProfile() {
 // ── LOAD PROFILE ──
 async function loadProfileAndPlan() {
   const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  if (!profile) { showProfileSetup(''); return; }
+  if (!profile) { isLoadingApp = false; showProfileSetup(''); return; }
   userProfile = profile;
   const { data: planData } = await sb.from('plans').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1).single();
   if (planData) {
@@ -757,6 +807,7 @@ function showMainApp() {
     <div class="metric-box"><div class="metric-lbl">Level</div><div class="metric-val" style="font-size:11px;text-transform:capitalize">${userProfile?.fitness_level||'—'}</div></div>`;
   document.getElementById('qs-cw').textContent = (userProfile?.current_weight||'—') + 'kg';
   document.getElementById('qs-tw').textContent = (userProfile?.target_weight||'—') + 'kg';
+  isLoadingApp = false;
 }
 
 // ── GENERATE PLAN ──
