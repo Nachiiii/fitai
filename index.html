@@ -227,6 +227,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .divider{height:1px;background:var(--border);margin:1rem 0}
 .footer-note{text-align:center;font-size:11px;color:var(--text3);padding:0.75rem 0}
 .scroll-pad{height:1rem}
+
+/* ── WORKOUT TIMER MODAL ── */
+.timer-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:300;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem}
+.timer-modal.show{display:flex}
+.timer-phase{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:0.5rem}
+.timer-phase.work{color:var(--accent)}
+.timer-phase.rest{color:var(--orange)}
+.timer-big{font-family:'DM Serif Display',serif;font-size:88px;line-height:1;color:var(--text);margin:0.5rem 0}
+.timer-exercise{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px;text-align:center}
+.timer-set{font-size:13px;color:var(--text3);margin-bottom:1.5rem}
+.timer-ring{position:relative;width:200px;height:200px;margin:1rem auto}
+.timer-ring svg{transform:rotate(-90deg)}
+.timer-ring-track{fill:none;stroke:rgba(255,255,255,0.08);stroke-width:8}
+.timer-ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.timer-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.timer-controls{display:flex;gap:12px;margin-top:1.5rem}
+.timer-ctrl-btn{width:56px;height:56px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.timer-ctrl-btn:hover{background:var(--bg3)}
+.timer-next-btn{padding:12px 28px;background:var(--accent);color:var(--atext);border:none;border-radius:var(--rpill);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.timer-progress{width:100%;display:flex;gap:4px;margin-top:1.5rem;justify-content:center;flex-wrap:wrap}
+.timer-dot{width:8px;height:8px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);transition:background 0.3s}
+.timer-dot.done{background:var(--accent)}
+.timer-dot.active{background:var(--accent);box-shadow:0 0 6px var(--accent)}
 </style>
 </head>
 <body>
@@ -388,7 +411,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div id="workout-content"><div class="full-loader"><div class="spinner"></div><span class="dots">Building plan</span></div></div>
       <div id="workout-done-btn-wrap" style="display:none;margin-top:0.75rem">
-        <button class="cta-btn" onclick="finishWorkout()">✅ Workout done — see results</button>
+        <button class="cta-btn" onclick="startWorkoutTimer()" style="margin-bottom:8px">▶ Start workout with timer</button>
+        <button class="cta-btn secondary" onclick="finishWorkout()">✅ Mark as done (no timer)</button>
       </div>
       <div class="scroll-pad"></div>
     </div>
@@ -583,6 +607,38 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 
+<!-- ══ WORKOUT TIMER MODAL ══ -->
+<div class="timer-modal" id="timer-modal">
+  <div style="width:100%;max-width:380px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="font-size:13px;color:var(--text3)" id="timer-workout-name">Workout</div>
+      <button onclick="closeTimer()" style="background:none;border:1px solid var(--border2);color:var(--text3);border-radius:var(--rs);padding:5px 12px;cursor:pointer;font-size:12px">✕ End</button>
+    </div>
+    <div class="timer-ring">
+      <svg viewBox="0 0 200 200" width="200" height="200">
+        <circle class="timer-ring-track" cx="100" cy="100" r="88"/>
+        <circle class="timer-ring-fill" id="timer-ring-fill" cx="100" cy="100" r="88" stroke-dasharray="553" stroke-dashoffset="0" stroke="var(--accent)"/>
+      </svg>
+      <div class="timer-ring-center">
+        <div class="timer-phase work" id="timer-phase-label">WORK</div>
+        <div class="timer-big" id="timer-display">00:00</div>
+      </div>
+    </div>
+    <div class="timer-exercise" id="timer-ex-name">Exercise</div>
+    <div class="timer-set" id="timer-set-label">Set 1 of 4</div>
+    <div class="timer-progress" id="timer-dots"></div>
+    <div class="timer-controls">
+      <button class="timer-ctrl-btn" onclick="skipTimer()" title="Skip">⏭</button>
+      <button class="timer-next-btn" onclick="nextTimerStep()" id="timer-next-btn">Next set →</button>
+      <button class="timer-ctrl-btn" onclick="pauseTimer()" id="timer-pause-btn" title="Pause">⏸</button>
+    </div>
+    <div style="margin-top:1.25rem;display:flex;justify-content:space-between;font-size:12px;color:var(--text3)">
+      <span>Total time: <strong id="timer-elapsed" style="color:var(--text)">0:00</strong></span>
+      <span>Exercises: <strong id="timer-done-count" style="color:var(--accent)">0</strong> done</span>
+    </div>
+  </div>
+</div>
+
 </div><!-- end .app -->
 
 <script>
@@ -618,12 +674,16 @@ let isLoadingApp = false;
 })();
 
 sb.auth.onAuthStateChange(async (event, session) => {
+  // TOKEN_REFRESHED keeps user logged in across refresh
+  if (event === 'TOKEN_REFRESHED' && session) {
+    currentUser = session.user; // just update user, no reload
+    return;
+  }
   if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session) {
-    if (isLoadingApp) return; // prevent double load
+    if (isLoadingApp) return;
     isLoadingApp = true;
     currentUser = session.user;
     await loadProfileAndPlan();
-    // isLoadingApp reset inside loadProfileAndPlan after done
   } else if (event === 'INITIAL_SESSION' && !session) {
     showAuthScreen('login');
   }
@@ -824,7 +884,8 @@ async function generatePlan() {
   const prompt = `Expert fitness coach. Create a COMPLETE personalized fitness plan for:
 Name: ${p.name} | Goal: ${goal} (${weightDiff}kg to go) | Current: ${p.current_weight}kg → Target: ${p.target_weight}kg | Age: ${p.age} | Gender: ${p.gender} | Level: ${p.fitness_level} | Duration: ${dur} minutes per session
 
-Workout type: ${isHome ? 'HOME BODYWEIGHT ONLY — pushups, squats, lunges, burpees, planks, mountain climbers, jumping jacks, dips on chair, glute bridges. ZERO gym equipment.' : 'GYM with full equipment — barbells, dumbbells, cables, smith machine, leg press, bench press etc.'}
+Workout type: ${isHome ? 'HOME BODYWEIGHT ONLY — NO equipment. Use: pushups (wide/narrow/diamond/decline/incline), squats (sumo/jump/pistol), lunges (reverse/walking/lateral), burpees, planks (standard/side/spiderman), mountain climbers, glute bridges, hip thrusts, tricep dips on chair, pike pushups, bear crawls, high knees, leg raises, bicycle crunches.' : 'GYM with full equipment — barbell bench press, incline dumbbell press, cable flyes, barbell rows, lat pulldowns, seated cable rows, barbell squats, leg press, Romanian deadlift, dumbbell shoulder press, lateral raises, barbell curls, tricep pushdowns, leg curls, calf raises, cable crunches etc.'}
+CRITICAL: Each workout day MUST have 6-8 exercises (not 3). For bulking: higher sets (4-5), lower reps (6-10) with heavier focus. For cutting: more supersets, higher reps (12-20), shorter rest. Include warm-up note.
 
 Return ONLY valid JSON (no markdown):
 {
@@ -1069,13 +1130,13 @@ function compressImage(file, cb) {
   r.onload = ev => {
     const img = new Image();
     img.onload = () => {
-      const MAX = 768, ratio = img.width/img.height;
+      const MAX = 1024, ratio = img.width/img.height;
       let w=img.width, h=img.height;
       if(w>MAX||h>MAX){if(w>h){w=MAX;h=Math.round(MAX/ratio);}else{h=MAX;w=Math.round(MAX*ratio);}}
       const c=document.createElement('canvas'); c.width=w; c.height=h;
       c.getContext('2d').drawImage(img,0,0,w,h);
-      let q=0.75, d=c.toDataURL('image/jpeg',q);
-      while(d.length>150000&&q>0.3){q-=0.1;d=c.toDataURL('image/jpeg',q);}
+      let q=0.92, d=c.toDataURL('image/jpeg',q);
+      while(d.length>400000&&q>0.5){q-=0.05;d=c.toDataURL('image/jpeg',q);}
       cb(d);
     };
     img.src=ev.target.result;
@@ -1100,10 +1161,26 @@ function handleMealPhoto(e) {
 async function scanMeal(base64) {
   const userContent = [
     { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:base64 } },
-    { type:'text', text:`Analyze this meal photo and provide accurate nutritional information.
-Return ONLY valid JSON, no markdown:
-{"meal_name":"Grilled Chicken with Rice","calories":650,"protein":45,"carbs":60,"fats":18,"breakdown":"Chicken breast ~200g (165 kcal, 31g protein). Brown rice ~150g (215 kcal). Vegetables ~100g (35 kcal). Sauce/oil estimate (35 kcal).","confidence":"high"}
-Be accurate and realistic. Estimate portion sizes from the photo.` }
+    { type:'text', text:`You are a professional nutritionist with expert knowledge of food calorie content.
+Carefully examine this food photo and count ALL items visible.
+IMPORTANT: Count exact quantities (e.g. if you see 3 eggs, use 3 not 2. If you see a full plate of rice, estimate the full weight).
+Use standard nutrition databases (USDA) for calorie values.
+Break down EACH food item separately with its exact quantity and calories.
+
+Return ONLY this JSON, no markdown, no extra text:
+{
+  "meal_name": "Descriptive name of exactly what you see",
+  "calories": 520,
+  "protein": 38,
+  "carbs": 42,
+  "fats": 16,
+  "breakdown": "3 large eggs (210 kcal, 18g protein). 2 slices whole wheat toast (160 kcal, 8g carbs). 1 tsp butter (35 kcal, 4g fat). Total: 405 kcal.",
+  "items": [
+    {"name": "Large egg x3", "qty": "3 eggs (165g)", "calories": 210, "protein": 18, "carbs": 1, "fats": 15},
+    {"name": "Whole wheat toast", "qty": "2 slices (60g)", "calories": 160, "protein": 6, "carbs": 28, "fats": 2}
+  ]
+}
+Count every visible item carefully. Be precise with quantities.` }
   ];
   try {
     const res = await fetch('/api/generate', {
@@ -1125,7 +1202,7 @@ Be accurate and realistic. Estimate portion sizes from the photo.` }
     document.getElementById('meal-result').style.display = 'block';
     // Log it
     if (currentUser && parsed.calories) {
-      const logEntry = { name: parsed.meal_name, calories: parsed.calories, protein: parsed.protein, carbs: parsed.carbs, fats: parsed.fats, time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+      const logEntry = { name: parsed.meal_name, calories: parsed.calories, protein: parsed.protein, carbs: parsed.carbs, fats: parsed.fats, breakdown: parsed.breakdown||'', time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
       mealLogToday.push(logEntry);
       localStorage.setItem('sj_meals_'+new Date().toDateString(), JSON.stringify(mealLogToday));
       await sb.from('meal_logs').insert({ user_id: currentUser.id, meal_name: parsed.meal_name, calories: parsed.calories, protein: parsed.protein, carbs: parsed.carbs, fats: parsed.fats });
@@ -1142,12 +1219,48 @@ function updateMealLog() {
   if (!mealLogToday.length) return;
   const total = mealLogToday.reduce((s,m)=>s+(m.calories||0),0);
   document.getElementById('meal-log-total').textContent = total + ' kcal';
-  document.getElementById('meal-log-list').innerHTML = mealLogToday.map(m=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-      <div><div style="font-size:13px;font-weight:500">${m.name}</div><div style="font-size:11px;color:var(--text3)">${m.time||''} · P:${m.protein||0}g C:${m.carbs||0}g F:${m.fats||0}g</div></div>
-      <div style="font-size:13px;font-weight:700;color:var(--accent)">${m.calories} kcal</div>
+  document.getElementById('meal-log-list').innerHTML = mealLogToday.map((m,i)=>`
+    <div style="border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;cursor:pointer" onclick="toggleMealLog(${i})">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:18px">🍽️</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">${m.name}</div>
+            <div style="font-size:11px;color:var(--text3)">${m.time||''}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:13px;font-weight:700;color:var(--accent)">${m.calories} kcal</div>
+          <div style="font-size:10px;color:var(--text3);transition:transform 0.2s" id="meal-chev-${i}">▼</div>
+        </div>
+      </div>
+      <div id="meal-log-detail-${i}" style="display:none;padding-bottom:10px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
+          <div style="background:var(--bg3);border-radius:var(--rs);padding:8px;text-align:center">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:2px">PROTEIN</div>
+            <div style="font-size:14px;font-weight:700">${m.protein||0}g</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--rs);padding:8px;text-align:center">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:2px">CARBS</div>
+            <div style="font-size:14px;font-weight:700">${m.carbs||0}g</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--rs);padding:8px;text-align:center">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:2px">FATS</div>
+            <div style="font-size:14px;font-weight:700">${m.fats||0}g</div>
+          </div>
+        </div>
+        ${m.breakdown ? `<div style="font-size:11px;color:var(--text3);line-height:1.6;background:var(--bg3);border-radius:var(--rs);padding:8px">${m.breakdown}</div>` : ''}
+      </div>
     </div>`).join('');
   document.getElementById('meal-log-section').style.display = 'block';
+}
+
+function toggleMealLog(i) {
+  const detail = document.getElementById(`meal-log-detail-${i}`);
+  const chev = document.getElementById(`meal-chev-${i}`);
+  const open = detail.style.display === 'block';
+  detail.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 function resetMealScanner() {
@@ -1162,19 +1275,44 @@ function initStepCounter() {
   const today = new Date().toDateString();
   stepCount = stepHistory[today] || 0;
   updateStepsDisplay();
-  if (typeof DeviceMotionEvent !== 'undefined') {
-    if (typeof DeviceMotionEvent.requestPermission === 'function') {
-      document.getElementById('steps-permission-btn').style.display = 'block';
-    } else {
-      startMotionDetection();
-    }
+  if (typeof DeviceMotionEvent === 'undefined') return;
+  // iOS 13+ needs permission — request it automatically on first user interaction
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    // Try silently first; if it fails we show the button on the steps tab
+    DeviceMotionEvent.requestPermission()
+      .then(r => {
+        if (r === 'granted') {
+          startMotionDetection();
+          const btn = document.getElementById('steps-permission-btn');
+          if (btn) btn.style.display = 'none';
+        } else {
+          const btn = document.getElementById('steps-permission-btn');
+          if (btn) btn.style.display = 'block';
+        }
+      })
+      .catch(() => {
+        // Permission dialog needs user gesture — show button
+        const btn = document.getElementById('steps-permission-btn');
+        if (btn) btn.style.display = 'block';
+      });
+  } else {
+    // Android / desktop — start immediately, no permission needed
+    startMotionDetection();
   }
 }
 
 function requestMotionPermission() {
-  DeviceMotionEvent.requestPermission().then(r => {
-    if (r === 'granted') { startMotionDetection(); document.getElementById('steps-permission-btn').style.display='none'; }
-  }).catch(()=>{});
+  if (typeof DeviceMotionEvent?.requestPermission === 'function') {
+    DeviceMotionEvent.requestPermission().then(r => {
+      if (r === 'granted') {
+        startMotionDetection();
+        document.getElementById('steps-permission-btn').style.display = 'none';
+      }
+    }).catch(() => {});
+  } else {
+    startMotionDetection();
+    document.getElementById('steps-permission-btn').style.display = 'none';
+  }
 }
 
 function startMotionDetection() {
@@ -1275,9 +1413,12 @@ function setEditPref(p) {
 }
 
 async function updateProfile() {
+  const cw = parseFloat(document.getElementById('edit-cw').value);
+  const tw = parseFloat(document.getElementById('edit-tw').value);
+  if (!cw || !tw) { alert('Please fill in weight fields.'); return; }
   const updates = {
-    current_weight: parseFloat(document.getElementById('edit-cw').value)||userProfile.current_weight,
-    target_weight: parseFloat(document.getElementById('edit-tw').value)||userProfile.target_weight,
+    current_weight: cw,
+    target_weight: tw,
     age: parseInt(document.getElementById('edit-age').value)||userProfile.age,
     gender: document.getElementById('edit-gender').value||userProfile.gender,
     fitness_level: document.getElementById('edit-level').value||userProfile.fitness_level,
@@ -1291,10 +1432,23 @@ async function updateProfile() {
     msgEl.className = 'error-box'; msgEl.textContent = 'Error saving: '+error.message;
   } else {
     userProfile = { ...userProfile, ...updates };
-    msgEl.className = 'success-box'; msgEl.textContent = 'Profile updated ✓';
+    // Update goal badge and metrics live
+    const isBulk = updates.target_weight > updates.current_weight;
+    document.getElementById('workout-goal-badge').textContent = isBulk ? '💪 Bulk plan' : '🔥 Cut plan';
+    document.getElementById('qs-cw').textContent = updates.current_weight+'kg';
+    document.getElementById('qs-tw').textContent = updates.target_weight+'kg';
+    document.getElementById('workout-metrics').innerHTML = `
+      <div class="metric-box"><div class="metric-lbl">Now</div><div class="metric-val">${updates.current_weight}kg</div></div>
+      <div class="metric-box"><div class="metric-lbl">Target</div><div class="metric-val">${updates.target_weight}kg</div></div>
+      <div class="metric-box"><div class="metric-lbl">Level</div><div class="metric-val" style="font-size:11px;text-transform:capitalize">${updates.fitness_level}</div></div>`;
+    // Update workout preference toggle
+    resultWorkoutType = updates.workout_preference;
+    document.getElementById('wt-home').classList.toggle('active', updates.workout_preference==='home');
+    document.getElementById('wt-gym').classList.toggle('active', updates.workout_preference==='gym');
+    msgEl.className = 'success-box'; msgEl.textContent = 'Profile updated ✓ Regenerate plan to apply changes.';
   }
   msgEl.style.display = 'block';
-  setTimeout(()=>{ msgEl.style.display='none'; }, 3000);
+  setTimeout(()=>{ msgEl.style.display='none'; }, 4000);
 }
 
 async function regeneratePlan() {
@@ -1337,6 +1491,205 @@ function setGreeting() {
   if (el) el.textContent = g;
   const nameEl = document.getElementById('hero-name');
   if (nameEl) nameEl.textContent = userProfile?.name || currentUser?.user_metadata?.name || 'Athlete';
+}
+
+// ── WORKOUT TIMER ENGINE ──
+let timerState = {
+  exercises: [], // flat list of {name, sets, restSecs, icon}
+  currentEx: 0, currentSet: 0,
+  phase: 'work', // 'work' | 'rest'
+  seconds: 0, totalSeconds: 0,
+  interval: null, elapsedInterval: null,
+  elapsedSecs: 0, doneCount: 0,
+  paused: false, restSecs: 60
+};
+
+function startWorkoutTimer() {
+  const data = resultWorkoutType === 'home' ? plans.home : plans.gym;
+  if (!data) return;
+  const today = new Date().getDay();
+  const idx = today === 0 ? 6 : today - 1;
+  const todayW = data[idx < data.length ? idx : 0];
+  if (!todayW || todayW.rest) { alert('Today is a rest day! 🧘'); return; }
+
+  const exs = (todayW.exercises || []);
+  if (!exs.length) return;
+
+  // Parse rest seconds from string like "60s" or "1min"
+  function parseRest(r) {
+    if (!r) return 60;
+    const n = parseInt(r);
+    return r.includes('min') ? n * 60 : n;
+  }
+
+  timerState.exercises = exs;
+  timerState.restSecs = parseRest(todayW.restBetween) || 60;
+  timerState.currentEx = 0;
+  timerState.currentSet = 0;
+  timerState.phase = 'work';
+  timerState.elapsedSecs = 0;
+  timerState.doneCount = 0;
+  timerState.paused = false;
+
+  document.getElementById('timer-workout-name').textContent = todayW.focus || "Today's Workout";
+  document.getElementById('timer-modal').classList.add('show');
+  updateTimerUI();
+  startTimerTick();
+  startElapsedTick();
+}
+
+function updateTimerUI() {
+  const ts = timerState;
+  const ex = ts.exercises[ts.currentEx];
+  if (!ex) return;
+  const sets = parseInt(ex.sets) || 3;
+  const isRest = ts.phase === 'rest';
+
+  document.getElementById('timer-phase-label').textContent = isRest ? 'REST' : 'WORK';
+  document.getElementById('timer-phase-label').className = 'timer-phase ' + (isRest ? 'rest' : 'work');
+  document.getElementById('timer-ex-name').textContent = (ex.icon||'')+' '+ex.name;
+  document.getElementById('timer-set-label').textContent = `Set ${ts.currentSet+1} of ${sets}${ex.reps ? ' · '+ex.reps+' reps' : ''}`;
+  document.getElementById('timer-ring-fill').style.stroke = isRest ? 'var(--orange)' : 'var(--accent)';
+  document.getElementById('timer-next-btn').textContent = isRest ? 'Start next set →' : 'Done — rest →';
+
+  // Build dots for all sets across all exercises
+  const dots = ts.exercises.flatMap((e,ei) => Array(parseInt(e.sets)||3).fill(0).map((_,si) => {
+    const isDone = ei < ts.currentEx || (ei === ts.currentEx && si < ts.currentSet);
+    const isActive = ei === ts.currentEx && si === ts.currentSet;
+    return `<div class="timer-dot ${isDone?'done':''} ${isActive?'active':''}" title="${e.name}"></div>`;
+  }));
+  document.getElementById('timer-dots').innerHTML = dots.join('');
+  document.getElementById('timer-done-count').textContent = ts.doneCount;
+
+  // Set timer seconds
+  if (ts.phase === 'work') {
+    // For work phase, just count up — no fixed time
+    ts.totalSeconds = 0; ts.seconds = 0;
+    document.getElementById('timer-display').textContent = 'GO!';
+    document.getElementById('timer-ring-fill').style.strokeDashoffset = '0';
+  } else {
+    ts.totalSeconds = ts.restSecs;
+    ts.seconds = ts.restSecs;
+    updateTimerDisplay();
+  }
+}
+
+function startTimerTick() {
+  clearInterval(timerState.interval);
+  timerState.interval = setInterval(() => {
+    if (timerState.paused) return;
+    if (timerState.phase === 'work') {
+      // Count up during work
+      timerState.seconds++;
+      const m = Math.floor(timerState.seconds/60), s = timerState.seconds%60;
+      document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    } else {
+      // Count down during rest
+      if (timerState.seconds > 0) {
+        timerState.seconds--;
+        updateTimerDisplay();
+        const pct = timerState.seconds / timerState.totalSeconds;
+        document.getElementById('timer-ring-fill').style.strokeDashoffset = 553 * (1 - pct);
+        if (timerState.seconds === 0) {
+          // Auto advance after rest
+          setTimeout(() => { if (!timerState.paused) nextTimerStep(); }, 500);
+        }
+      }
+    }
+  }, 1000);
+}
+
+function startElapsedTick() {
+  clearInterval(timerState.elapsedInterval);
+  timerState.elapsedInterval = setInterval(() => {
+    if (!timerState.paused) {
+      timerState.elapsedSecs++;
+      const m = Math.floor(timerState.elapsedSecs/60), s = timerState.elapsedSecs%60;
+      document.getElementById('timer-elapsed').textContent = `${m}:${String(s).padStart(2,'0')}`;
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerState.seconds/60), s = timerState.seconds%60;
+  document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function nextTimerStep() {
+  const ts = timerState;
+  const ex = ts.exercises[ts.currentEx];
+  const sets = parseInt(ex?.sets) || 3;
+
+  if (ts.phase === 'work') {
+    ts.doneCount++;
+    // Check if more sets for this exercise
+    if (ts.currentSet < sets - 1) {
+      ts.phase = 'rest';
+      ts.seconds = ts.restSecs;
+      ts.totalSeconds = ts.restSecs;
+    } else {
+      // Move to next exercise
+      if (ts.currentEx < ts.exercises.length - 1) {
+        ts.currentEx++;
+        ts.currentSet = 0;
+        ts.phase = 'rest'; // rest between exercises too
+        ts.seconds = ts.restSecs;
+        ts.totalSeconds = ts.restSecs;
+      } else {
+        // All done!
+        closeTimer();
+        showWorkoutResults();
+        return;
+      }
+    }
+  } else {
+    // Rest done — go to work phase
+    ts.phase = 'work';
+    if (ts.currentSet < (parseInt(ts.exercises[ts.currentEx]?.sets)||3) - 1) {
+      ts.currentSet++;
+    }
+    ts.seconds = 0;
+  }
+  updateTimerUI();
+}
+
+function skipTimer() {
+  nextTimerStep();
+}
+
+function pauseTimer() {
+  timerState.paused = !timerState.paused;
+  document.getElementById('timer-pause-btn').textContent = timerState.paused ? '▶' : '⏸';
+}
+
+function closeTimer() {
+  clearInterval(timerState.interval);
+  clearInterval(timerState.elapsedInterval);
+  document.getElementById('timer-modal').classList.remove('show');
+}
+
+function showWorkoutResults() {
+  // Calculate accurate calories using MET formula
+  const data = resultWorkoutType === 'home' ? plans.home : plans.gym;
+  const today = new Date().getDay();
+  const idx = today === 0 ? 6 : today - 1;
+  const todayW = data?.[idx < (data?.length||0) ? idx : 0];
+  const met = todayW?.met || 6.0;
+  const weight = userProfile?.current_weight || 70;
+  const durationMins = timerState.elapsedSecs / 60;
+  const kcal = Math.round(met * weight * (durationMins / 60));
+  const totalSets = timerState.exercises.reduce((s,e)=>s+(parseInt(e.sets)||3), 0);
+  const score = Math.min(100, Math.round((timerState.doneCount / Math.max(1, totalSets)) * 100));
+  const intensity = score >= 90 ? 'Elite 🔥' : score >= 75 ? 'High 💪' : score >= 50 ? 'Moderate 👍' : 'Light 🌱';
+  const msg = score >= 90 ? 'Perfect session — every set crushed!' : score >= 75 ? 'Strong workout — nearly perfect!' : score >= 50 ? 'Good session — keep building consistency.' : 'Every workout counts. Keep showing up!';
+
+  document.getElementById('eff-score-num').textContent = score;
+  document.getElementById('eff-kcal').textContent = kcal;
+  document.getElementById('eff-exercises').textContent = `${timerState.doneCount}/${totalSets} sets`;
+  document.getElementById('eff-message').innerHTML = `<strong>Intensity: ${intensity}</strong><br>${msg}<br><span style="color:var(--text3)">Duration: ${Math.round(durationMins)} min</span>`;
+  const offset = 314 - (314 * score / 100);
+  document.getElementById('eff-ring-fill').style.strokeDashoffset = offset;
+  document.getElementById('eff-modal').classList.add('show');
 }
 </script>
 </body>
