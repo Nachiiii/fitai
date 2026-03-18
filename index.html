@@ -237,10 +237,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .timer-big{font-family:'DM Serif Display',serif;font-size:88px;line-height:1;color:var(--text);margin:0.5rem 0}
 .timer-exercise{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px;text-align:center}
 .timer-set{font-size:13px;color:var(--text3);margin-bottom:1.5rem}
-.timer-ring{position:relative;width:200px;height:200px;margin:1rem auto}
-.timer-ring svg{transform:rotate(-90deg)}
-.timer-ring-track{fill:none;stroke:rgba(255,255,255,0.08);stroke-width:8}
-.timer-ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.timer-ring{position:relative;margin:0 auto}
+.timer-ring svg{transform:rotate(-90deg);display:block}
+.timer-ring-track{fill:none;stroke:rgba(255,255,255,0.06);stroke-width:10}
+.timer-ring-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
 .timer-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 .timer-controls{display:flex;gap:12px;margin-top:1.5rem}
 .timer-ctrl-btn{width:56px;height:56px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
@@ -609,32 +609,82 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- ══ WORKOUT TIMER MODAL ══ -->
 <div class="timer-modal" id="timer-modal">
-  <div style="width:100%;max-width:380px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <div style="font-size:13px;color:var(--text3)" id="timer-workout-name">Workout</div>
-      <button onclick="closeTimer()" style="background:none;border:1px solid var(--border2);color:var(--text3);border-radius:var(--rs);padding:5px 12px;cursor:pointer;font-size:12px">✕ End</button>
+  <div style="width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center">
+
+    <!-- Header -->
+    <div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--text3)">Today's Session</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-top:2px" id="timer-workout-name">Workout</div>
+      </div>
+      <button onclick="confirmStopTimer()" style="display:flex;align-items:center;gap:5px;background:var(--rdim);border:1px solid rgba(255,79,79,0.3);color:var(--red);border-radius:var(--rpill);padding:7px 14px;cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif">
+        ✕ Stop
+      </button>
     </div>
-    <div class="timer-ring">
-      <svg viewBox="0 0 200 200" width="200" height="200">
-        <circle class="timer-ring-track" cx="100" cy="100" r="88"/>
-        <circle class="timer-ring-fill" id="timer-ring-fill" cx="100" cy="100" r="88" stroke-dasharray="553" stroke-dashoffset="0" stroke="var(--accent)"/>
+
+    <!-- Phase pill -->
+    <div id="timer-phase-pill" style="padding:5px 18px;border-radius:var(--rpill);font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.25rem;background:var(--adim);color:var(--accent);border:1px solid rgba(200,245,66,0.25)">WORK</div>
+
+    <!-- Ring -->
+    <div class="timer-ring" style="width:220px;height:220px;margin-bottom:1.25rem">
+      <svg viewBox="0 0 220 220" width="220" height="220">
+        <circle fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10" cx="110" cy="110" r="96"/>
+        <circle class="timer-ring-fill" id="timer-ring-fill" fill="none" stroke="var(--accent)" stroke-width="10" cx="110" cy="110" r="96" stroke-dasharray="603" stroke-dashoffset="0" stroke-linecap="round"/>
       </svg>
       <div class="timer-ring-center">
-        <div class="timer-phase work" id="timer-phase-label">WORK</div>
-        <div class="timer-big" id="timer-display">00:00</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:56px;line-height:1;color:var(--text)" id="timer-display">GO</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px" id="timer-count-label">counting up</div>
       </div>
     </div>
-    <div class="timer-exercise" id="timer-ex-name">Exercise</div>
-    <div class="timer-set" id="timer-set-label">Set 1 of 4</div>
-    <div class="timer-progress" id="timer-dots"></div>
-    <div class="timer-controls">
-      <button class="timer-ctrl-btn" onclick="skipTimer()" title="Skip">⏭</button>
-      <button class="timer-next-btn" onclick="nextTimerStep()" id="timer-next-btn">Next set →</button>
-      <button class="timer-ctrl-btn" onclick="pauseTimer()" id="timer-pause-btn" title="Pause">⏸</button>
+
+    <!-- Exercise info -->
+    <div style="text-align:center;margin-bottom:0.5rem">
+      <div style="font-size:18px;font-weight:700;color:var(--text)" id="timer-ex-name">Exercise</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:3px" id="timer-set-label">Set 1 of 4</div>
     </div>
-    <div style="margin-top:1.25rem;display:flex;justify-content:space-between;font-size:12px;color:var(--text3)">
-      <span>Total time: <strong id="timer-elapsed" style="color:var(--text)">0:00</strong></span>
-      <span>Exercises: <strong id="timer-done-count" style="color:var(--accent)">0</strong> done</span>
+
+    <!-- Progress dots -->
+    <div class="timer-progress" id="timer-dots" style="margin:1rem 0"></div>
+
+    <!-- Controls -->
+    <div style="display:flex;align-items:center;gap:12px;margin-top:0.5rem;width:100%">
+      <button onclick="pauseTimer()" id="timer-pause-btn"
+        style="width:52px;height:52px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">⏸</button>
+      <button onclick="nextTimerStep()" id="timer-next-btn"
+        style="flex:1;padding:15px;background:var(--accent);color:var(--atext);border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer">
+        Done — Rest →
+      </button>
+      <button onclick="skipTimer()"
+        style="width:52px;height:52px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">⏭</button>
+    </div>
+
+    <!-- Stats bar -->
+    <div style="display:flex;justify-content:space-between;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <div style="text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--text)" id="timer-elapsed">0:00</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px">Total time</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--accent)" id="timer-done-count">0</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px">Sets done</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--orange)" id="timer-kcal-live">0</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px">kcal burned</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Confirm stop dialog -->
+<div id="timer-stop-confirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:400;align-items:center;justify-content:center;padding:2rem">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:1.5rem;width:100%;max-width:320px;text-align:center">
+    <div style="font-size:18px;font-weight:700;margin-bottom:0.5rem">Stop workout?</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:1.25rem">You can still see your results so far.</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="cancelStopTimer()" style="flex:1;padding:12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Keep going</button>
+      <button onclick="forceStopTimer()" style="flex:1;padding:12px;background:var(--rdim);border:1px solid rgba(255,79,79,0.3);color:var(--red);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Stop & analyse</button>
     </div>
   </div>
 </div>
@@ -645,7 +695,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 // ── SUPABASE INIT ──
 const SUPABASE_URL = 'https://mnbfmprkwgbrjicxwuze.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uYmZtcHJrd2dicmppY3h3dXplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODQ4NDMsImV4cCI6MjA4OTA2MDg0M30.7jDh90keAm1Sm3LFx50e5jjPkGtHcfzxMpmDwvPUOac';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    storage: window.localStorage
+  }
+});
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -665,30 +722,35 @@ let editPref = '';
 let mealLogToday = JSON.parse(localStorage.getItem('sj_meals_'+new Date().toDateString()) || '[]');
 
 // ── INIT ──
-let isLoadingApp = false;
+let appReady = false;
 
-(async () => {
-  updateStepsDisplay();
-  initStepCounter();
-  setGreeting();
-})();
+// Step counter and greeting run immediately
+updateStepsDisplay();
+setGreeting();
 
+// Auth: single listener, clean state machine
 sb.auth.onAuthStateChange(async (event, session) => {
-  // TOKEN_REFRESHED keeps user logged in across refresh
-  if (event === 'TOKEN_REFRESHED' && session) {
-    currentUser = session.user; // just update user, no reload
-    return;
-  }
-  if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session) {
-    if (isLoadingApp) return;
-    isLoadingApp = true;
+  if (event === 'TOKEN_REFRESHED') return; // silent refresh, do nothing
+  if (event === 'SIGNED_IN' && session) {
+    if (appReady) return; // already loaded, skip
+    appReady = true;
     currentUser = session.user;
     await loadProfileAndPlan();
-  } else if (event === 'INITIAL_SESSION' && !session) {
-    showAuthScreen('login');
+    return;
+  }
+  if (event === 'INITIAL_SESSION') {
+    if (session) {
+      if (appReady) return;
+      appReady = true;
+      currentUser = session.user;
+      await loadProfileAndPlan();
+    } else {
+      showAuthScreen('login');
+    }
+    return;
   }
   if (event === 'SIGNED_OUT') {
-    isLoadingApp = false;
+    appReady = false;
     currentUser = null; userProfile = null;
     plans = { home:null, gym:null, diet:null, tips:null };
     showAuthScreen('login');
@@ -821,7 +883,7 @@ async function saveProfile() {
 // ── LOAD PROFILE ──
 async function loadProfileAndPlan() {
   const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  if (!profile) { isLoadingApp = false; showProfileSetup(''); return; }
+  if (!profile) { appReady = false; showProfileSetup(''); return; }
   userProfile = profile;
   const { data: planData } = await sb.from('plans').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1).single();
   if (planData) {
@@ -867,7 +929,8 @@ function showMainApp() {
     <div class="metric-box"><div class="metric-lbl">Level</div><div class="metric-val" style="font-size:11px;text-transform:capitalize">${userProfile?.fitness_level||'—'}</div></div>`;
   document.getElementById('qs-cw').textContent = (userProfile?.current_weight||'—') + 'kg';
   document.getElementById('qs-tw').textContent = (userProfile?.target_weight||'—') + 'kg';
-  isLoadingApp = false;
+  // initStepCounter after app is shown (needs DOM ready + user context)
+  initStepCounter();
 }
 
 // ── GENERATE PLAN ──
@@ -1276,32 +1339,39 @@ function initStepCounter() {
   stepCount = stepHistory[today] || 0;
   updateStepsDisplay();
   if (typeof DeviceMotionEvent === 'undefined') return;
-  // iOS 13+ needs permission — request it automatically on first user interaction
   if (typeof DeviceMotionEvent.requestPermission === 'function') {
-    // Try silently first; if it fails we show the button on the steps tab
-    DeviceMotionEvent.requestPermission()
-      .then(r => {
-        if (r === 'granted') {
-          startMotionDetection();
-          const btn = document.getElementById('steps-permission-btn');
-          if (btn) btn.style.display = 'none';
-        } else {
-          const btn = document.getElementById('steps-permission-btn');
-          if (btn) btn.style.display = 'block';
-        }
-      })
-      .catch(() => {
-        // Permission dialog needs user gesture — show button
-        const btn = document.getElementById('steps-permission-btn');
-        if (btn) btn.style.display = 'block';
-      });
+    // iOS: can only request on user gesture. Hook into first tap on the page.
+    setupIOSStepPermission();
   } else {
-    // Android / desktop — start immediately, no permission needed
+    // Android / Chrome — start right away, no permission needed
     startMotionDetection();
   }
 }
 
+let iosStepListenerAdded = false;
+function setupIOSStepPermission() {
+  if (iosStepListenerAdded) return;
+  iosStepListenerAdded = true;
+  // Show button on steps tab as fallback
+  const btn = document.getElementById('steps-permission-btn');
+  if (btn) btn.style.display = 'block';
+  // Also try on first user tap anywhere in the app
+  const tryOnTap = () => {
+    DeviceMotionEvent.requestPermission()
+      .then(r => {
+        if (r === 'granted') {
+          startMotionDetection();
+          const b = document.getElementById('steps-permission-btn');
+          if (b) b.style.display = 'none';
+          document.removeEventListener('click', tryOnTap);
+        }
+      }).catch(() => {});
+  };
+  document.addEventListener('click', tryOnTap);
+}
+
 function requestMotionPermission() {
+  // Explicit button tap — guaranteed user gesture
   if (typeof DeviceMotionEvent?.requestPermission === 'function') {
     DeviceMotionEvent.requestPermission().then(r => {
       if (r === 'granted') {
@@ -1311,7 +1381,8 @@ function requestMotionPermission() {
     }).catch(() => {});
   } else {
     startMotionDetection();
-    document.getElementById('steps-permission-btn').style.display = 'none';
+    const btn = document.getElementById('steps-permission-btn');
+    if (btn) btn.style.display = 'none';
   }
 }
 
@@ -1544,15 +1615,20 @@ function updateTimerUI() {
   if (!ex) return;
   const sets = parseInt(ex.sets) || 3;
   const isRest = ts.phase === 'rest';
+  const pill = document.getElementById('timer-phase-pill');
 
-  document.getElementById('timer-phase-label').textContent = isRest ? 'REST' : 'WORK';
-  document.getElementById('timer-phase-label').className = 'timer-phase ' + (isRest ? 'rest' : 'work');
-  document.getElementById('timer-ex-name').textContent = (ex.icon||'')+' '+ex.name;
-  document.getElementById('timer-set-label').textContent = `Set ${ts.currentSet+1} of ${sets}${ex.reps ? ' · '+ex.reps+' reps' : ''}`;
+  if (pill) {
+    pill.textContent = isRest ? 'REST' : 'WORK';
+    pill.style.background = isRest ? 'var(--odim)' : 'var(--adim)';
+    pill.style.color = isRest ? 'var(--orange)' : 'var(--accent)';
+    pill.style.borderColor = isRest ? 'rgba(255,140,66,0.25)' : 'rgba(200,245,66,0.25)';
+  }
+  document.getElementById('timer-ex-name').textContent = (ex.icon||'') + ' ' + ex.name;
+  document.getElementById('timer-set-label').textContent = `Set ${ts.currentSet+1} of ${sets}${ex.reps ? ' · ' + ex.reps + ' reps' : ''}`;
   document.getElementById('timer-ring-fill').style.stroke = isRest ? 'var(--orange)' : 'var(--accent)';
-  document.getElementById('timer-next-btn').textContent = isRest ? 'Start next set →' : 'Done — rest →';
+  document.getElementById('timer-next-btn').textContent = isRest ? 'Start next set →' : 'Done — Rest →';
 
-  // Build dots for all sets across all exercises
+  // Dots
   const dots = ts.exercises.flatMap((e,ei) => Array(parseInt(e.sets)||3).fill(0).map((_,si) => {
     const isDone = ei < ts.currentEx || (ei === ts.currentEx && si < ts.currentSet);
     const isActive = ei === ts.currentEx && si === ts.currentSet;
@@ -1561,15 +1637,22 @@ function updateTimerUI() {
   document.getElementById('timer-dots').innerHTML = dots.join('');
   document.getElementById('timer-done-count').textContent = ts.doneCount;
 
-  // Set timer seconds
+  // Live kcal estimate
+  const met = ts.exercises[ts.currentEx]?.met || 6.0;
+  const w = userProfile?.current_weight || 70;
+  const liveKcal = Math.round(met * w * (ts.elapsedSecs / 3600));
+  const kcalEl = document.getElementById('timer-kcal-live');
+  if (kcalEl) kcalEl.textContent = liveKcal;
+
   if (ts.phase === 'work') {
-    // For work phase, just count up — no fixed time
     ts.totalSeconds = 0; ts.seconds = 0;
-    document.getElementById('timer-display').textContent = 'GO!';
+    document.getElementById('timer-display').textContent = 'GO';
+    document.getElementById('timer-count-label').textContent = 'counting up';
     document.getElementById('timer-ring-fill').style.strokeDashoffset = '0';
   } else {
     ts.totalSeconds = ts.restSecs;
     ts.seconds = ts.restSecs;
+    document.getElementById('timer-count-label').textContent = 'rest timer';
     updateTimerDisplay();
   }
 }
@@ -1589,9 +1672,8 @@ function startTimerTick() {
         timerState.seconds--;
         updateTimerDisplay();
         const pct = timerState.seconds / timerState.totalSeconds;
-        document.getElementById('timer-ring-fill').style.strokeDashoffset = 553 * (1 - pct);
+        document.getElementById('timer-ring-fill').style.strokeDashoffset = 603 * (1 - pct);
         if (timerState.seconds === 0) {
-          // Auto advance after rest
           setTimeout(() => { if (!timerState.paused) nextTimerStep(); }, 500);
         }
       }
@@ -1605,7 +1687,16 @@ function startElapsedTick() {
     if (!timerState.paused) {
       timerState.elapsedSecs++;
       const m = Math.floor(timerState.elapsedSecs/60), s = timerState.elapsedSecs%60;
-      document.getElementById('timer-elapsed').textContent = `${m}:${String(s).padStart(2,'0')}`;
+      const elEl = document.getElementById('timer-elapsed');
+      if (elEl) elEl.textContent = `${m}:${String(s).padStart(2,'0')}`;
+      // Update live kcal every 5 seconds
+      if (timerState.elapsedSecs % 5 === 0) {
+        const met = timerState.exercises[timerState.currentEx]?.met || 6.0;
+        const w = userProfile?.current_weight || 70;
+        const liveKcal = Math.round(met * w * (timerState.elapsedSecs / 3600));
+        const kcalEl = document.getElementById('timer-kcal-live');
+        if (kcalEl) kcalEl.textContent = liveKcal;
+      }
     }
   }, 1000);
 }
@@ -1662,10 +1753,26 @@ function pauseTimer() {
   document.getElementById('timer-pause-btn').textContent = timerState.paused ? '▶' : '⏸';
 }
 
+function confirmStopTimer() {
+  // Pause while user decides
+  timerState.paused = true;
+  document.getElementById('timer-stop-confirm').style.display = 'flex';
+}
+function cancelStopTimer() {
+  timerState.paused = false;
+  document.getElementById('timer-stop-confirm').style.display = 'none';
+}
+function forceStopTimer() {
+  document.getElementById('timer-stop-confirm').style.display = 'none';
+  closeTimer();
+  showWorkoutResults();
+}
 function closeTimer() {
   clearInterval(timerState.interval);
   clearInterval(timerState.elapsedInterval);
+  timerState.paused = false;
   document.getElementById('timer-modal').classList.remove('show');
+  document.getElementById('timer-stop-confirm').style.display = 'none';
 }
 
 function showWorkoutResults() {
