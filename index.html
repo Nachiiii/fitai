@@ -229,27 +229,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .scroll-pad{height:1rem}
 
 /* ── WORKOUT TIMER MODAL ── */
-.timer-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:300;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem}
+.timer-modal{display:none;position:fixed;inset:0;background:#0a0a0a;z-index:300;flex-direction:column;align-items:center;justify-content:flex-start;padding:0;overflow-y:auto}
 .timer-modal.show{display:flex}
-.timer-phase{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:0.5rem}
-.timer-phase.work{color:var(--accent)}
-.timer-phase.rest{color:var(--orange)}
-.timer-big{font-family:'DM Serif Display',serif;font-size:88px;line-height:1;color:var(--text);margin:0.5rem 0}
-.timer-exercise{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px;text-align:center}
-.timer-set{font-size:13px;color:var(--text3);margin-bottom:1.5rem}
 .timer-ring{position:relative;margin:0 auto}
 .timer-ring svg{transform:rotate(-90deg);display:block}
-.timer-ring-track{fill:none;stroke:rgba(255,255,255,0.06);stroke-width:10}
 .timer-ring-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
-.timer-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
-.timer-controls{display:flex;gap:12px;margin-top:1.5rem}
-.timer-ctrl-btn{width:56px;height:56px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
-.timer-ctrl-btn:hover{background:var(--bg3)}
-.timer-next-btn{padding:12px 28px;background:var(--accent);color:var(--atext);border:none;border-radius:var(--rpill);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
-.timer-progress{width:100%;display:flex;gap:4px;margin-top:1.5rem;justify-content:center;flex-wrap:wrap}
-.timer-dot{width:8px;height:8px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);transition:background 0.3s}
-.timer-dot.done{background:var(--accent)}
-.timer-dot.active{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.timer-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.timer-dot{width:10px;height:10px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);transition:all 0.3s;flex-shrink:0}
+.timer-dot.done{background:var(--accent);border-color:var(--accent)}
+.timer-dot.active{background:var(--accent);border-color:var(--accent);transform:scale(1.3)}
+.timer-dot.skipped{background:var(--text3);border-color:var(--text3)}
+/* Log set sheet */
+.log-sheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:400;align-items:flex-end;justify-content:center}
+.log-sheet.show{display:flex}
+.log-sheet-inner{background:var(--bg2);border-radius:20px 20px 0 0;padding:1.5rem 1.5rem 2.5rem;width:100%;max-width:480px;border-top:1px solid var(--border2)}
+/* RPE sheet */
+.rpe-sheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:400;align-items:center;justify-content:center;padding:1.5rem}
+.rpe-sheet.show{display:flex}
+.rpe-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+.rpe-btn.selected{background:var(--accent);color:var(--atext);border-color:var(--accent);transform:scale(1.15)}
 </style>
 </head>
 <body>
@@ -609,82 +607,129 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- ══ WORKOUT TIMER MODAL ══ -->
 <div class="timer-modal" id="timer-modal">
-  <div style="width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center">
+  <div style="width:100%;max-width:420px;padding:1.25rem 1.25rem 2rem;display:flex;flex-direction:column;align-items:center;min-height:100vh">
 
     <!-- Header -->
-    <div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0 1.5rem">
       <div>
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--text3)">Today's Session</div>
-        <div style="font-size:15px;font-weight:600;color:var(--text);margin-top:2px" id="timer-workout-name">Workout</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;color:var(--text3);text-transform:uppercase">Today</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-top:2px" id="timer-workout-name">Workout</div>
       </div>
-      <button onclick="confirmStopTimer()" style="display:flex;align-items:center;gap:5px;background:var(--rdim);border:1px solid rgba(255,79,79,0.3);color:var(--red);border-radius:var(--rpill);padding:7px 14px;cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif">
-        ✕ Stop
-      </button>
+      <button onclick="confirmStopTimer()" style="background:var(--rdim);border:1px solid rgba(255,79,79,0.3);color:var(--red);border-radius:var(--rpill);padding:8px 16px;cursor:pointer;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif">✕ End session</button>
     </div>
 
     <!-- Phase pill -->
-    <div id="timer-phase-pill" style="padding:5px 18px;border-radius:var(--rpill);font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.25rem;background:var(--adim);color:var(--accent);border:1px solid rgba(200,245,66,0.25)">WORK</div>
+    <div id="timer-phase-pill" style="padding:6px 20px;border-radius:var(--rpill);font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:1.5rem;background:var(--adim);color:var(--accent);border:1px solid rgba(200,245,66,0.2)">WORK SET</div>
 
     <!-- Ring -->
     <div class="timer-ring" style="width:220px;height:220px;margin-bottom:1.25rem">
       <svg viewBox="0 0 220 220" width="220" height="220">
-        <circle fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10" cx="110" cy="110" r="96"/>
+        <circle fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10" cx="110" cy="110" r="96"/>
         <circle class="timer-ring-fill" id="timer-ring-fill" fill="none" stroke="var(--accent)" stroke-width="10" cx="110" cy="110" r="96" stroke-dasharray="603" stroke-dashoffset="0" stroke-linecap="round"/>
       </svg>
       <div class="timer-ring-center">
-        <div style="font-family:'DM Serif Display',serif;font-size:56px;line-height:1;color:var(--text)" id="timer-display">GO</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px" id="timer-count-label">counting up</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3)" id="timer-count-label">set time</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:52px;line-height:1.1;color:var(--text)" id="timer-display">0:00</div>
       </div>
     </div>
 
     <!-- Exercise info -->
-    <div style="text-align:center;margin-bottom:0.5rem">
-      <div style="font-size:18px;font-weight:700;color:var(--text)" id="timer-ex-name">Exercise</div>
-      <div style="font-size:13px;color:var(--text3);margin-top:3px" id="timer-set-label">Set 1 of 4</div>
+    <div style="text-align:center;margin-bottom:1rem">
+      <div style="font-size:20px;font-weight:700;color:var(--text)" id="timer-ex-name">Exercise</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:4px" id="timer-set-label">Set 1 of 4 · 12 reps</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px" id="timer-planned-reps"></div>
     </div>
+
+    <!-- Set log history for current exercise -->
+    <div id="timer-set-log" style="width:100%;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:1rem;min-height:28px"></div>
 
     <!-- Progress dots -->
-    <div class="timer-progress" id="timer-dots" style="margin:1rem 0"></div>
+    <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem" id="timer-dots"></div>
 
-    <!-- Controls -->
-    <div style="display:flex;align-items:center;gap:12px;margin-top:0.5rem;width:100%">
+    <!-- Main action button -->
+    <button onclick="onTimerAction()" id="timer-action-btn"
+      style="width:100%;padding:18px;background:var(--accent);color:var(--atext);border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:-0.2px;transition:opacity 0.15s">
+      ✓ Set done — log reps
+    </button>
+
+    <!-- Secondary controls -->
+    <div style="display:flex;gap:8px;width:100%;margin-top:8px">
       <button onclick="pauseTimer()" id="timer-pause-btn"
-        style="width:52px;height:52px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">⏸</button>
-      <button onclick="nextTimerStep()" id="timer-next-btn"
-        style="flex:1;padding:15px;background:var(--accent);color:var(--atext);border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer">
-        Done — Rest →
-      </button>
-      <button onclick="skipTimer()"
-        style="width:52px;height:52px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">⏭</button>
+        style="flex:1;padding:12px;border:1px solid var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">⏸ Pause</button>
+      <button onclick="skipCurrentSet()"
+        style="flex:1;padding:12px;border:1px solid var(--border);background:transparent;color:var(--text3);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Skip set ⏭</button>
     </div>
 
-    <!-- Stats bar -->
+    <!-- Stats row -->
     <div style="display:flex;justify-content:space-between;width:100%;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)">
       <div style="text-align:center">
-        <div style="font-size:18px;font-weight:700;color:var(--text)" id="timer-elapsed">0:00</div>
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px">Total time</div>
+        <div style="font-size:20px;font-weight:700;color:var(--text)" id="timer-elapsed">0:00</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px">Session time</div>
       </div>
       <div style="text-align:center">
-        <div style="font-size:18px;font-weight:700;color:var(--accent)" id="timer-done-count">0</div>
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px">Sets done</div>
+        <div style="font-size:20px;font-weight:700;color:var(--accent)" id="timer-done-count">0</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px">Sets logged</div>
       </div>
       <div style="text-align:center">
-        <div style="font-size:18px;font-weight:700;color:var(--orange)" id="timer-kcal-live">0</div>
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px">kcal burned</div>
+        <div style="font-size:20px;font-weight:700;color:var(--orange)" id="timer-vol-live">0</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px">Total reps</div>
       </div>
     </div>
+  </div>
+</div>
 
+<!-- Log Set Sheet -->
+<div class="log-sheet" id="log-sheet">
+  <div class="log-sheet-inner">
+    <div style="font-size:17px;font-weight:700;margin-bottom:4px" id="log-ex-title">Log your set</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:1.25rem" id="log-ex-sub">Enter what you actually did</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem">
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);display:block;margin-bottom:6px">Reps done *</label>
+        <input type="number" id="log-reps" min="0" max="200" placeholder="e.g. 12"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:18px;font-weight:700;text-align:center"/>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);display:block;margin-bottom:6px">Weight (kg) optional</label>
+        <input type="number" id="log-weight" min="0" max="500" placeholder="e.g. 60"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:18px;font-weight:700;text-align:center"/>
+      </div>
+    </div>
+    <button onclick="confirmLogSet()"
+      style="width:100%;padding:15px;background:var(--accent);color:var(--atext);border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px">
+      Confirm set ✓
+    </button>
+    <button onclick="closeLogSheet()"
+      style="width:100%;padding:11px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">
+      Cancel
+    </button>
+  </div>
+</div>
+
+<!-- RPE Rating Sheet -->
+<div class="rpe-sheet" id="rpe-sheet">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:1.75rem 1.5rem;width:100%;max-width:380px">
+    <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:0.25rem;text-align:center">Rate your effort</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:1.5rem;text-align:center">1 = easy stroll · 10 = absolutely destroyed</div>
+    <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem" id="rpe-buttons">
+      <!-- filled by JS -->
+    </div>
+    <div style="text-align:center;font-size:14px;color:var(--text2);min-height:24px;margin-bottom:1rem" id="rpe-label"></div>
+    <button onclick="confirmRPE()" id="rpe-confirm-btn"
+      style="width:100%;padding:15px;background:var(--accent);color:var(--atext);border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;opacity:0.4" disabled>
+      See my analysis →
+    </button>
   </div>
 </div>
 
 <!-- Confirm stop dialog -->
-<div id="timer-stop-confirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:400;align-items:center;justify-content:center;padding:2rem">
+<div id="timer-stop-confirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;align-items:center;justify-content:center;padding:2rem">
   <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:1.5rem;width:100%;max-width:320px;text-align:center">
-    <div style="font-size:18px;font-weight:700;margin-bottom:0.5rem">Stop workout?</div>
-    <div style="font-size:13px;color:var(--text3);margin-bottom:1.25rem">You can still see your results so far.</div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:0.5rem">End session?</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:1.25rem">Your logged sets will still be analysed.</div>
     <div style="display:flex;gap:8px">
       <button onclick="cancelStopTimer()" style="flex:1;padding:12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Keep going</button>
-      <button onclick="forceStopTimer()" style="flex:1;padding:12px;background:var(--rdim);border:1px solid rgba(255,79,79,0.3);color:var(--red);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Stop & analyse</button>
+      <button onclick="forceStopTimer()" style="flex:1;padding:12px;background:var(--rdim);border:1px solid rgba(255,79,79,0.3);color:var(--red);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">End & analyse</button>
     </div>
   </div>
 </div>
@@ -1564,15 +1609,18 @@ function setGreeting() {
   if (nameEl) nameEl.textContent = userProfile?.name || currentUser?.user_metadata?.name || 'Athlete';
 }
 
-// ── WORKOUT TIMER ENGINE ──
+// ── WORKOUT TIMER ENGINE (Set logging + RPE) ──
 let timerState = {
-  exercises: [], // flat list of {name, sets, restSecs, icon}
+  exercises: [],
   currentEx: 0, currentSet: 0,
   phase: 'work', // 'work' | 'rest'
   seconds: 0, totalSeconds: 0,
   interval: null, elapsedInterval: null,
-  elapsedSecs: 0, doneCount: 0,
-  paused: false, restSecs: 60
+  elapsedSecs: 0, paused: false, restSecs: 60,
+  // Real logged data
+  setLog: [],       // [{exIdx, setIdx, reps, weight, time}]
+  totalReps: 0,
+  rpeRating: null
 };
 
 function startWorkoutTimer() {
@@ -1582,11 +1630,9 @@ function startWorkoutTimer() {
   const idx = today === 0 ? 6 : today - 1;
   const todayW = data[idx < data.length ? idx : 0];
   if (!todayW || todayW.rest) { alert('Today is a rest day! 🧘'); return; }
-
   const exs = (todayW.exercises || []);
   if (!exs.length) return;
 
-  // Parse rest seconds from string like "60s" or "1min"
   function parseRest(r) {
     if (!r) return 60;
     const n = parseInt(r);
@@ -1599,8 +1645,10 @@ function startWorkoutTimer() {
   timerState.currentSet = 0;
   timerState.phase = 'work';
   timerState.elapsedSecs = 0;
-  timerState.doneCount = 0;
   timerState.paused = false;
+  timerState.setLog = [];
+  timerState.totalReps = 0;
+  timerState.rpeRating = null;
 
   document.getElementById('timer-workout-name').textContent = todayW.focus || "Today's Workout";
   document.getElementById('timer-modal').classList.add('show');
@@ -1615,44 +1663,66 @@ function updateTimerUI() {
   if (!ex) return;
   const sets = parseInt(ex.sets) || 3;
   const isRest = ts.phase === 'rest';
-  const pill = document.getElementById('timer-phase-pill');
 
+  const pill = document.getElementById('timer-phase-pill');
   if (pill) {
-    pill.textContent = isRest ? 'REST' : 'WORK';
+    pill.textContent = isRest ? 'REST' : 'WORK SET';
     pill.style.background = isRest ? 'var(--odim)' : 'var(--adim)';
     pill.style.color = isRest ? 'var(--orange)' : 'var(--accent)';
-    pill.style.borderColor = isRest ? 'rgba(255,140,66,0.25)' : 'rgba(200,245,66,0.25)';
+    pill.style.borderColor = isRest ? 'rgba(255,140,66,0.2)' : 'rgba(200,245,66,0.2)';
   }
   document.getElementById('timer-ex-name').textContent = (ex.icon||'') + ' ' + ex.name;
-  document.getElementById('timer-set-label').textContent = `Set ${ts.currentSet+1} of ${sets}${ex.reps ? ' · ' + ex.reps + ' reps' : ''}`;
+  document.getElementById('timer-set-label').textContent = `Set ${ts.currentSet+1} of ${sets}`;
+  document.getElementById('timer-planned-reps').textContent = ex.reps ? `Target: ${ex.reps} reps` : '';
   document.getElementById('timer-ring-fill').style.stroke = isRest ? 'var(--orange)' : 'var(--accent)';
-  document.getElementById('timer-next-btn').textContent = isRest ? 'Start next set →' : 'Done — Rest →';
 
-  // Dots
+  // Action button
+  const actionBtn = document.getElementById('timer-action-btn');
+  if (actionBtn) {
+    if (isRest) {
+      actionBtn.textContent = '▶ Start next set';
+      actionBtn.style.background = 'var(--bg3)';
+      actionBtn.style.color = 'var(--text)';
+      actionBtn.style.border = '1px solid var(--border2)';
+    } else {
+      actionBtn.textContent = '✓ Set done — log reps';
+      actionBtn.style.background = 'var(--accent)';
+      actionBtn.style.color = 'var(--atext)';
+      actionBtn.style.border = 'none';
+    }
+  }
+
+  // Set log chips for current exercise
+  const exSets = ts.setLog.filter(s => s.exIdx === ts.currentEx);
+  const logEl = document.getElementById('timer-set-log');
+  if (logEl) {
+    logEl.innerHTML = exSets.map(s =>
+      `<div style="padding:4px 10px;background:var(--adim);border:1px solid rgba(200,245,66,0.2);border-radius:var(--rpill);font-size:12px;font-weight:600;color:var(--accent)">${s.reps}${s.weight ? '@'+s.weight+'kg' : ''}</div>`
+    ).join('');
+  }
+
+  // Progress dots
   const dots = ts.exercises.flatMap((e,ei) => Array(parseInt(e.sets)||3).fill(0).map((_,si) => {
-    const isDone = ei < ts.currentEx || (ei === ts.currentEx && si < ts.currentSet);
-    const isActive = ei === ts.currentEx && si === ts.currentSet;
-    return `<div class="timer-dot ${isDone?'done':''} ${isActive?'active':''}" title="${e.name}"></div>`;
+    const logged = ts.setLog.find(s => s.exIdx === ei && s.setIdx === si);
+    const isActive = ei === ts.currentEx && si === ts.currentSet && !isRest;
+    const cls = logged ? 'done' : isActive ? 'active' : '';
+    return `<div class="timer-dot ${cls}" title="${e.name} set ${si+1}${logged?' · '+logged.reps+' reps':''}"></div>`;
   }));
   document.getElementById('timer-dots').innerHTML = dots.join('');
-  document.getElementById('timer-done-count').textContent = ts.doneCount;
 
-  // Live kcal estimate
-  const met = ts.exercises[ts.currentEx]?.met || 6.0;
-  const w = userProfile?.current_weight || 70;
-  const liveKcal = Math.round(met * w * (ts.elapsedSecs / 3600));
-  const kcalEl = document.getElementById('timer-kcal-live');
-  if (kcalEl) kcalEl.textContent = liveKcal;
+  // Stats
+  document.getElementById('timer-done-count').textContent = ts.setLog.length;
+  document.getElementById('timer-vol-live').textContent = ts.totalReps;
 
   if (ts.phase === 'work') {
-    ts.totalSeconds = 0; ts.seconds = 0;
-    document.getElementById('timer-display').textContent = 'GO';
-    document.getElementById('timer-count-label').textContent = 'counting up';
+    ts.seconds = 0;
+    document.getElementById('timer-display').textContent = '0:00';
+    document.getElementById('timer-count-label').textContent = 'set time';
     document.getElementById('timer-ring-fill').style.strokeDashoffset = '0';
   } else {
     ts.totalSeconds = ts.restSecs;
     ts.seconds = ts.restSecs;
-    document.getElementById('timer-count-label').textContent = 'rest timer';
+    document.getElementById('timer-count-label').textContent = 'rest';
     updateTimerDisplay();
   }
 }
@@ -1706,55 +1776,116 @@ function updateTimerDisplay() {
   document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-function nextTimerStep() {
-  const ts = timerState;
-  const ex = ts.exercises[ts.currentEx];
-  const sets = parseInt(ex?.sets) || 3;
-
-  if (ts.phase === 'work') {
-    ts.doneCount++;
-    // Check if more sets for this exercise
-    if (ts.currentSet < sets - 1) {
-      ts.phase = 'rest';
-      ts.seconds = ts.restSecs;
-      ts.totalSeconds = ts.restSecs;
-    } else {
-      // Move to next exercise
-      if (ts.currentEx < ts.exercises.length - 1) {
-        ts.currentEx++;
-        ts.currentSet = 0;
-        ts.phase = 'rest'; // rest between exercises too
-        ts.seconds = ts.restSecs;
-        ts.totalSeconds = ts.restSecs;
-      } else {
-        // All done!
-        closeTimer();
-        showWorkoutResults();
-        return;
-      }
-    }
+// Called when user taps the main action button
+function onTimerAction() {
+  if (timerState.phase === 'rest') {
+    // Start next set
+    startNextSet();
   } else {
-    // Rest done — go to work phase
-    ts.phase = 'work';
-    if (ts.currentSet < (parseInt(ts.exercises[ts.currentEx]?.sets)||3) - 1) {
-      ts.currentSet++;
-    }
-    ts.seconds = 0;
+    // Work phase done — open log sheet
+    timerState.paused = true;
+    openLogSheet();
+  }
+}
+
+function openLogSheet() {
+  const ex = timerState.exercises[timerState.currentEx];
+  document.getElementById('log-ex-title').textContent = (ex?.icon||'') + ' ' + (ex?.name||'Set');
+  document.getElementById('log-ex-sub').textContent = `Set ${timerState.currentSet+1} · Target: ${ex?.reps||'—'} reps`;
+  document.getElementById('log-reps').value = '';
+  document.getElementById('log-weight').value = '';
+  document.getElementById('log-sheet').classList.add('show');
+  setTimeout(() => document.getElementById('log-reps').focus(), 100);
+}
+
+function closeLogSheet() {
+  document.getElementById('log-sheet').classList.remove('show');
+  timerState.paused = false;
+}
+
+function confirmLogSet() {
+  const reps = parseInt(document.getElementById('log-reps').value);
+  if (!reps || reps < 1) {
+    document.getElementById('log-reps').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('log-reps').style.borderColor = '', 1000);
+    return;
+  }
+  const weight = parseFloat(document.getElementById('log-weight').value) || 0;
+  const ts = timerState;
+
+  ts.setLog.push({ exIdx: ts.currentEx, setIdx: ts.currentSet, reps, weight, time: ts.elapsedSecs });
+  ts.totalReps += reps;
+
+  document.getElementById('log-sheet').classList.remove('show');
+  timerState.paused = false;
+
+  // Advance to rest or next exercise
+  const sets = parseInt(ts.exercises[ts.currentEx]?.sets) || 3;
+  if (ts.currentSet < sets - 1) {
+    ts.phase = 'rest';
+    ts.seconds = ts.restSecs;
+    ts.totalSeconds = ts.restSecs;
+    updateTimerUI();
+  } else if (ts.currentEx < ts.exercises.length - 1) {
+    ts.currentEx++;
+    ts.currentSet = 0;
+    ts.phase = 'rest';
+    ts.seconds = ts.restSecs;
+    ts.totalSeconds = ts.restSecs;
+    updateTimerUI();
+  } else {
+    // All exercises done — show RPE rating
+    closeTimer();
+    showRPESheet();
+  }
+}
+
+function startNextSet() {
+  const ts = timerState;
+  ts.phase = 'work';
+  ts.seconds = 0;
+  if (ts.currentSet < (parseInt(ts.exercises[ts.currentEx]?.sets)||3) - 1) {
+    ts.currentSet++;
   }
   updateTimerUI();
 }
 
-function skipTimer() {
-  nextTimerStep();
+function skipCurrentSet() {
+  // Skip without logging — mark as skipped
+  const ts = timerState;
+  const sets = parseInt(ts.exercises[ts.currentEx]?.sets) || 3;
+  if (ts.phase === 'work') {
+    if (ts.currentSet < sets - 1) {
+      ts.currentSet++;
+      ts.phase = 'rest';
+      ts.seconds = ts.restSecs;
+      ts.totalSeconds = ts.restSecs;
+    } else if (ts.currentEx < ts.exercises.length - 1) {
+      ts.currentEx++;
+      ts.currentSet = 0;
+      ts.phase = 'rest';
+      ts.seconds = ts.restSecs;
+      ts.totalSeconds = ts.restSecs;
+    } else {
+      closeTimer();
+      showRPESheet();
+      return;
+    }
+    updateTimerUI();
+  } else {
+    startNextSet();
+  }
 }
+
+function nextTimerStep() { skipCurrentSet(); } // legacy alias
 
 function pauseTimer() {
   timerState.paused = !timerState.paused;
-  document.getElementById('timer-pause-btn').textContent = timerState.paused ? '▶' : '⏸';
+  const btn = document.getElementById('timer-pause-btn');
+  if (btn) btn.textContent = timerState.paused ? '▶ Resume' : '⏸ Pause';
 }
 
 function confirmStopTimer() {
-  // Pause while user decides
   timerState.paused = true;
   document.getElementById('timer-stop-confirm').style.display = 'flex';
 }
@@ -1765,7 +1896,8 @@ function cancelStopTimer() {
 function forceStopTimer() {
   document.getElementById('timer-stop-confirm').style.display = 'none';
   closeTimer();
-  showWorkoutResults();
+  if (timerState.setLog.length > 0) showRPESheet();
+  else showWorkoutResults();
 }
 function closeTimer() {
   clearInterval(timerState.interval);
@@ -1773,27 +1905,87 @@ function closeTimer() {
   timerState.paused = false;
   document.getElementById('timer-modal').classList.remove('show');
   document.getElementById('timer-stop-confirm').style.display = 'none';
+  document.getElementById('log-sheet').classList.remove('show');
 }
 
+// ── RPE SHEET ──
+let selectedRPE = null;
+const rpeLabels = {1:'Very easy',2:'Easy',3:'Light',4:'Somewhat hard',5:'Hard',6:'Hard+',7:'Very hard',8:'Very hard — close to limit',9:'Max effort — barely made it',10:'Left everything on the floor 🔥'};
+
+function showRPESheet() {
+  selectedRPE = null;
+  const btns = Array.from({length:10},(_,i) => i+1).map(n =>
+    `<button class="rpe-btn" id="rpe-${n}" onclick="selectRPE(${n})">${n}</button>`
+  ).join('');
+  document.getElementById('rpe-buttons').innerHTML = btns;
+  document.getElementById('rpe-label').textContent = '';
+  document.getElementById('rpe-confirm-btn').disabled = true;
+  document.getElementById('rpe-confirm-btn').style.opacity = '0.4';
+  document.getElementById('rpe-sheet').classList.add('show');
+}
+
+function selectRPE(n) {
+  selectedRPE = n;
+  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('rpe-'+n).classList.add('selected');
+  document.getElementById('rpe-label').textContent = rpeLabels[n] || '';
+  document.getElementById('rpe-confirm-btn').disabled = false;
+  document.getElementById('rpe-confirm-btn').style.opacity = '1';
+}
+
+function confirmRPE() {
+  timerState.rpeRating = selectedRPE;
+  document.getElementById('rpe-sheet').classList.remove('show');
+  showWorkoutResults();
+}
+
+// ── REAL WORKOUT ANALYSIS ──
 function showWorkoutResults() {
-  // Calculate accurate calories using MET formula
+  const ts = timerState;
+  const log = ts.setLog;
+  const durationMins = ts.elapsedSecs / 60;
+  const weight = userProfile?.current_weight || 70;
+  const rpe = ts.rpeRating || 5;
+
+  // Total planned sets across all exercises
+  const plannedSets = ts.exercises.reduce((s,e) => s + (parseInt(e.sets)||3), 0);
+  const completedSets = log.length;
+
+  // Total volume = sum of (reps × weight) for weighted, or just reps for bodyweight
+  const totalVolume = log.reduce((s,l) => s + (l.weight ? l.reps * l.weight : l.reps), 0);
+  const totalReps = log.reduce((s,l) => s + l.reps, 0);
+
+  // Completion rate
+  const completionRate = plannedSets > 0 ? completedSets / plannedSets : 0;
+
+  // Calories: MET × bodyweight × hours × RPE modifier
+  // RPE modifier: 0.7 at RPE 1, 1.0 at RPE 5, 1.35 at RPE 10
+  const rpeMod = 0.7 + (rpe - 1) * (0.065);
   const data = resultWorkoutType === 'home' ? plans.home : plans.gym;
   const today = new Date().getDay();
   const idx = today === 0 ? 6 : today - 1;
   const todayW = data?.[idx < (data?.length||0) ? idx : 0];
-  const met = todayW?.met || 6.0;
-  const weight = userProfile?.current_weight || 70;
-  const durationMins = timerState.elapsedSecs / 60;
+  const met = (todayW?.met || 6.0) * rpeMod;
   const kcal = Math.round(met * weight * (durationMins / 60));
-  const totalSets = timerState.exercises.reduce((s,e)=>s+(parseInt(e.sets)||3), 0);
-  const score = Math.min(100, Math.round((timerState.doneCount / Math.max(1, totalSets)) * 100));
-  const intensity = score >= 90 ? 'Elite 🔥' : score >= 75 ? 'High 💪' : score >= 50 ? 'Moderate 👍' : 'Light 🌱';
-  const msg = score >= 90 ? 'Perfect session — every set crushed!' : score >= 75 ? 'Strong workout — nearly perfect!' : score >= 50 ? 'Good session — keep building consistency.' : 'Every workout counts. Keep showing up!';
+
+  // Score: weighted combination of completion, RPE (effort), and duration
+  const completionScore = completionRate * 50;  // max 50 pts
+  const effortScore = (rpe / 10) * 30;          // max 30 pts
+  const durationScore = Math.min(1, durationMins / 45) * 20; // max 20 pts
+  const score = Math.round(completionScore + effortScore + durationScore);
+
+  const intensity = rpe >= 9 ? 'Max effort 🔥' : rpe >= 7 ? 'High intensity 💪' : rpe >= 5 ? 'Moderate 👍' : 'Light session 🌱';
+  const hasWeight = log.some(l => l.weight > 0);
+
+  let breakdown = `${completedSets}/${plannedSets} sets · ${totalReps} total reps`;
+  if (hasWeight) breakdown += ` · ${totalVolume.toLocaleString()}kg volume`;
+  breakdown += ` · RPE ${rpe}/10 · ${Math.round(durationMins)} min`;
 
   document.getElementById('eff-score-num').textContent = score;
   document.getElementById('eff-kcal').textContent = kcal;
-  document.getElementById('eff-exercises').textContent = `${timerState.doneCount}/${totalSets} sets`;
-  document.getElementById('eff-message').innerHTML = `<strong>Intensity: ${intensity}</strong><br>${msg}<br><span style="color:var(--text3)">Duration: ${Math.round(durationMins)} min</span>`;
+  document.getElementById('eff-exercises').textContent = `${completedSets}/${plannedSets} sets`;
+  document.getElementById('eff-message').innerHTML =
+    `<strong>${intensity}</strong><br>${breakdown}`;
   const offset = 314 - (314 * score / 100);
   document.getElementById('eff-ring-fill').style.strokeDashoffset = offset;
   document.getElementById('eff-modal').classList.add('show');
